@@ -1,0 +1,29 @@
+#!/bin/bash
+#Compile (and flash) source
+
+#Allow running from any directory
+lp="${0%/*}"
+
+#Do not run in /, assume working directory instead
+if [ -z "$lp" ]
+then
+	lp="."
+fi
+
+#Create output directory if non-existant
+if [ ! -d "$lp"/out ]
+then
+	mkdir "$lp"/out
+fi
+
+#Compile, then if successful either flash or tell the user that it is doable
+if avra -fI -o "$lp"/out/flash.hex -d "$lp"/out/main.obj -l "$lp"/out/main.lst -e "$lp"/out/eeprom.hex -m "$lp"/out/main.map "$lp"/src/main.avr
+then
+	echo ""
+	if [ -n "$1" ]
+	then
+		"$lp"/flash "$1"
+	else
+		echo "To also flash the compiled binaries run $0 /path/to/programmer/port"
+	fi
+fi

@@ -1,0 +1,30 @@
+#!/bin/bash
+#Flash (upload) compiled source
+
+#Fuses
+efuse="FF"
+hfuse="DF"
+lfuse="FD"
+lockb="EB"
+
+#Programmer parameters
+part="m328p"
+baud="19200"
+prog="stk500v1"
+
+#Allow running from any directory
+lp="${0%/*}"
+
+#Do not run in /, assume working directory instead
+if [ -z "$lp" ]
+then
+	lp="."
+fi
+
+if [ -n "$1" ]
+then
+	avrdude -p"$part" -b"$baud" -c"$prog" -P"$1" -Uefuse:w:"0x$efuse":m -Uhfuse:w:"0x$hfuse":m -Ulfuse:w:"0x$lfuse":m -Uflash:w:"$lp/out/flash.hex":i -Ueeprom:w:"$lp/out/eeprom.hex":i -Ulock:w:"0x$lockb":m
+else
+	echo
+	echo "Must be run as $0 /path/to/programmer/port"
+fi

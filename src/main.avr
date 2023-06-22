@@ -1,0 +1,1159 @@
+                .device ATmega328p          ;Device definition
+
+                .cseg                       ;Interrupt Vector Table
+                .org    $0000				;Start of Application Memory
+                rjmp    reset               ;Reset
+                nop
+                reti                        ;IRQ0 Handler
+                nop
+                reti                        ;IRQ1 Handler
+                nop
+                reti                        ;PCINT0 Handler
+                nop
+                reti                        ;PCINT1 Handler
+                nop
+                reti                        ;PCINT2 Handler
+                nop
+                reti                        ;Watchdog Timer Handler
+                nop
+                reti                        ;Timer2 Compare A Handler
+                nop
+                reti                        ;Timer2 Compare B Handler
+                nop
+                reti                        ;Timer2 Overflow Handler
+                nop
+                reti                        ;Timer1 Capture Handler
+                nop
+                reti                        ;Timer1 Compare A Handler
+                nop
+                reti                        ;Timer1 Compare B Handler
+                nop
+                reti                        ;Timer1 Overflow Handler
+                nop
+                reti                        ;Timer0 Compare A Handler
+                nop
+                reti                        ;Timer0 Compare B Handler
+                nop
+                reti                        ;Timer0 Overflow Handler
+                nop
+                reti                        ;SPI Transfer Complete Handler
+                nop
+                reti                        ;USART, RX Complete Handler
+                nop
+                reti                        ;USART, UDR Empty Handler
+                nop
+                reti                        ;USART, TX Complete Handler
+                nop
+                reti                        ;ADC Conversion Complete Handler
+                nop
+                reti                        ;EEPROM Ready Handler
+                nop
+                reti                        ;Analog Comparator Handler
+                nop
+                reti                        ;2-wire Serial Interface Handler
+                nop
+                reti                        ;Store Program Memory Ready Handler
+                nop
+ivtdone:									;Address first free program word
+
+
+                ;Definitions
+
+                .equ	PIND    = $09
+                .equ	DDRD	= $0A
+                .equ	PORTD	= $0B
+                .equ	PORTC	= $08
+                .equ	PORTB	= $05
+
+                .equ	SPL	    = $3D
+                .equ	SPH	    = $3E
+
+                .equ	RAMEND	= $08FF
+
+                .equ    SECLOOP =  4464
+
+                .equ    UNO2LOW =   316
+                .equ    UNOTX0  =   632
+                .equ    UNOTX1  =  1263
+
+                .equ    ZRO2LOW =  2526
+                .equ    ZROSEC  =  5682
+                .equ    ZROMIN  = 11995
+
+                .equ    FUPD    = 0b00000001
+                .equ    FUPMIN  = 0b00000010
+                .equ    FLPSEC  = 0b00000100
+                .equ    FMIN    = 0b00001000
+
+                .equ    FREC    = 0b00010000
+                .equ    FRLST   = 0b00100000
+                .equ    FRBIT   = 0b01000000
+                .equ    FTX     = 0b10000000
+
+                .equ    HLTC    = 0b00000001
+
+                .equ    TCHG    = 0b00000001
+                .equ    TCEST   = 0b00000010
+                .equ    TCET    = 0b00000100
+                .equ    TLEAP   = 0b00001000
+
+                .equ    TPARM   = 0b00010000
+                .equ    TPARH   = 0b00100000
+                .equ    TPARD   = 0b01000000
+
+                .equ    RDY     = 4
+                .equ    LTC     = 3
+                .equ    CLK     = 2
+                .equ    XDT     = 1
+                .equ    YDT     = 0
+
+                .def    RELAP   = r2
+                .def    HRELAP  = r3
+                .def    SECOND  = r4
+                .def    DXADD   = r5
+                .def    SXADD   = r6
+                .def    SETBAT  = r7
+                .def    DX_U    = r8
+                .def    DX_D    = r9
+                .def    SX_U    = r10
+                .def    SX_D    = r11
+                .def    MIN_U   = r12
+                .def    MIN_D   = r13
+                .def    HOUR_U  = r14
+                .def    HOUR_D  = r15
+
+                .def    TMP     = r16
+                .def    HTMP    = r17
+                .def    FLAGS   = r18
+                .def    HFLAGS  = r19
+                .def    CNT_MSK = r20
+                .def    XDT_MSK = r21
+                .def    YDT_MSK = r22
+                .def    PERIOD  = r23
+                .def    SEC_L   = r24
+                .def    SEC_H   = r25
+                .def	XL	    = r26
+                .def	XH	    = r27
+                .def	YL	    = r28
+                .def	YH	    = r29
+                .def	DXSUB   = r30               ;  Also the Z-pointer lower byte
+                .def	SXSUB   = r31               ;  Also the Z-pointer higher byte
+
+                ;Macro definitions
+
+                .macro  WASTE                       ;  Minimo 5 colpi di clock (= 1.25 us), massimo 772 (= 193 us)
+                ldi     TMP,((@0-5)/3)+1            ;  1
+                dec     TMP                         ;  1
+                brne    PC-1                        ;  1 2
+                rjmp    PC+(3-((@0-5)%3))           ;  2
+                nop                                 ;  1
+                nop                                 ;  1
+                .endmacro
+
+                .macro  UP_DATA
+
+                rol     XDT_MSK                     ;  1   Metto nel Carry il bit più significativo di X data
+                brcs    x@0c                        ;  1 2 Se è un uno salta
+                cbi     PORTD,XDT                   ;  2   Altrimenti azzera il bit
+                rjmp    x@0_over                    ;  2   Continua
+x@0c:           sbi     PORTD,XDT                   ;    2 Se è un uno Accendo il bit relativo
+                nop                                 ;    1
+x@0_over:
+
+                rol     YDT_MSK                     ;  1   Metto nel Carry il bit più significativo di Y data
+                brcs    y@0c                        ;  1 2 Se è un uno salto
+                cbi     PORTD,YDT                   ;  2   Altrimenti azzero il bit
+                rjmp    y@0_over                    ;  2   Continua
+y@0c:           sbi     PORTD,YDT                   ;    2 Setto il bit
+                nop                                 ;    1
+y@0_over:
+
+                ;12 clock consumati
+
+                .endmacro
+                .listmac
+
+
+                ;SRAM Map
+
+                .dseg
+                .org    $0100
+                ;SRAM loaded at startup
+load_sram:
+mask:                                               ;Descrizione dei segmenti
+m_dx_u:         .byte    1                          ;
+m_dx_d:         .byte    1                          ;
+m_sx_u:         .byte    1                          ;
+m_sx_d:         .byte    1                          ;
+m_mm_u:         .byte    1                          ;
+m_mm_d:         .byte    1                          ;
+m_hh_u:         .byte    1                          ;
+m_hh_d:         .byte    1                          ;
+ubmp:           .byte   16                          ;Copia sorgente per le maschere delle unità
+dbmp:           .byte   16                          ;Copia sorgente per le maschere delle decine
+vbmp:           .byte   20                          ;Copia sorgente per le maschere delle decine, no zero iniziale, con eventuale uno del centinaio
+
+num_of_sec:     .byte    1                          ;Numero dei secondi trascorsi
+rminu:          .byte    1                          ;Cifra dell'unità dei minuti ricevuta
+rmind:          .byte    1                          ;Cifra delle decine dei minuti ricevuta
+rhourru:        .byte    1                          ;Cifra dell'unità delle ore ricevuta
+rhourrd:        .byte    1                          ;Cifra delle decine dell'ora ricevuta
+rflags:         .byte    1                          ;Dati su ora legale, leap second e parità ricevuti
+
+t_sec:          .byte    1                          ;Secondo attuale
+t_min_u:        .byte    1                          ;Unità del minuto attuale
+t_min_d:        .byte    1                          ;Decina del minuto attuale
+t_hour_u:       .byte    1                          ;Unità dell'ora attuale
+t_hour_d:       .byte    1                          ;Decina dell'ora attuale
+t_flags:        .byte    1                          ;Dati su ora legale, leap second e parità
+
+				;SRAM not loaded at startup
+
+                ;Main program
+
+                .cseg                               ;Codice dopo tabella vettori
+                .org    ivtdone
+reset:
+                ldi     TMP,0b11111111              ;Imposto PORTB a 1111_1111 (FF)
+                out     PORTB,TMP                   ;(PULLUP attivati in tutti i pin della porta B)
+
+                ldi     TMP,0b01111111              ;Imposto PORTC a 0111_1111 (7F)
+                out     PORTC,TMP                   ;(PULLUP attivati in tutti i bit della porta C, msb inutilizzato)
+
+                ldi     TMP,0b11011001              ;Imposto PORTD a 1101_1001 (7) (R0 E1 L1 C0 X0 Y1)
+                out     PORTD,TMP                   ;(PULLUP attivati negli altri pin)
+
+                ldi     TMP,0b00011111              ;Imposto DDRD a 0001_1111 (F)
+                out     DDRD,TMP                    ;I 5 pin bassi li uso come output
+
+                ldi     TMP,HIGH(RAMEND)            ;Imposto lo stack Pointer al massimo della RAM
+                out     SPH,TMP                     ;
+                ldi     TMP,LOW(RAMEND)             ;
+                out     SPL,TMP                     ;
+
+                ldi     XH,HIGH(load_sram)          ;Imposto puntatore alla SRAM
+                ldi     XL,LOW(load_sram)           ;
+                ldi     SXSUB,HIGH(load_flash*2)    ;Imposto puntatore alla FLASH
+                ldi     DXSUB,LOW(load_flash*2)     ;Raddoppiato trattandosi di word e non di byte
+                ldi     YH,HIGH(load_flash_end*2)   ;Imposto puntatore alla fine della FLASH
+                ldi     YL,LOW(load_flash_end*2)    ;Raddoppiato trattandosi di word e non di byte
+
+sram_setup:     lpm     TMP,Z+                      ;Leggo la memoria FLASH
+                st      X+,TMP                      ;Scrivo il valore nella SRAM
+                cp      SXSUB,YH                    ;Ripeto fino alla fine
+                brne    sram_setup                  ;
+                cp      DXSUB,YL                    ;
+                brne    sram_setup                  ;Della flash
+
+                ldi     XH,HIGH(load_sram)          ;Preparo la parte alta dei puntatori
+                ldi     YH,HIGH(load_sram)          ;Alla SRAM
+
+                ldi     SEC_H,HIGH(SECLOOP)         ;Preparo il contatore per i secondi
+                ldi     SEC_L,LOW(SECLOOP)          ;
+                clr     PERIOD                      ;
+
+                clr     CNT_MSK                     ;Metto a zero il contatore delle X
+
+                ser     YDT_MSK                     ;Imposto per il primo giro tutto spento
+                clr     XDT_MSK                     ;
+
+                clr     MIN_U                       ;Azzero l'ora
+                clr     MIN_D                       ;
+                clr     HOUR_U                      ;
+                clr     HOUR_D                      ;
+                clr     SECOND                      ;
+
+                clr     DX_U                        ;Azzero il punteggio DX
+                clr     DX_D                        ;
+                clr     SX_U                        ;Azzero il punteggio SX
+                clr     SX_D                        ;
+                clr     SETBAT                      ;Azzero i set e la battuta
+
+                clr     DXADD                       ;Azzero i registri del punteggio
+                clr     SXADD                       ;
+                clr     DXSUB                       ;
+                clr     SXSUB                       ;
+
+                clr     RELAP                       ;Azzero il contatore di ricezione
+                clr     HRELAP                      ;
+                                
+                ;Pin D0 = Y - DATA
+                ;Pin D1 = X - DATA
+                ;Pin D2 = CLOCK
+                ;Pin D3 = LATCH
+
+                ;Pin D4 = OE - READY
+                ;Pin D5 = DCF77 DATA
+
+                ldi     FLAGS,0b00000001            ;Aggiornare orologio
+                in      TMP,PORTD                   ;
+                andi    TMP,FRLST                   ;
+                or      FLAGS,TMP                   ;Flag di ricezione al valore attuale
+
+                clr     HFLAGS                      ;Flag alta spenta
+
+                ;SETBAT:
+                ;0000-00xx set DX
+                ;0000-0x00 battuta DX
+                ;00xx-0000 set SX
+                ;0x00-0000 battuta SX
+
+                ;FLAGS:
+                ;0000-000x aggiornare display
+                ;0000-00x0 aumentare ora
+                ;0000-0x00 minuto con leap second
+                ;0000-x000 ricevuto segnale di inizio minuto
+
+                ;000x-0000 segnalo cambiamento di stato del ricevitore
+                ;00x0-0000 ultimo stato del ricevitore
+                ;0x00-0000 ultimo bit ricevuto da dcf77
+                ;x000-0000 segnalo ricezione bit da dcf77
+
+                ;HFLAGS:
+                ;0000-000x stato di riposo del latch (' : ' nell'ora)
+
+                ;t_flags:
+                ;0000-000x avviso di cambio ora
+                ;0000-00x0 CEST
+                ;0000-0x00 CET
+                ;0000-x000 avviso di leap second
+
+                ;000x-0000 parità minuti
+                ;00x0-0000 parità ore
+                ;0x00-0000 parità data
+
+main_loop:                                          ;16 operazioni da qui (56 instr x16 @ 4MHz)
+
+op01:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+
+                ldi     TMP,HLTC                    ;  1
+                and     TMP,HFLAGS                  ;  1   Verifico se il latch va lasciato alto
+                brne    op01_tog                    ;  1 2 Se è vero salto e perdo tempo
+                sbi     PIND,LTC                    ;  2   Altrimenti lo abbasso
+                rjmp    op01_tend                   ;  2
+op01_tog:       nop                                 ;    1
+                nop                                 ;    1
+                nop                                 ;    1
+op01_tend:
+                ; 8 clock fatti
+
+disp_clock:     ldi     TMP,FUPD                    ;  1   Testo se devo aggiornare l'orologio
+                and     TMP,FLAGS                   ;  1
+                breq    non_disp                    ;  1 2
+
+                ldi     YL,LOW(ubmp)                ;  1   Aggiorno le unità del minuto
+                add     YL,MIN_U                    ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b00000100             ;  1   Verifico se accendere la battuta DX
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_mm_u,TMP                  ;  2
+
+                ldi     YL,LOW(dbmp)                ;  1   Aggiorno le decine del minuto
+                add     YL,MIN_D                    ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b00000011             ;  1   Verifico se accendere il primo set DX
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_mm_d,TMP                  ;  2
+
+                ldi     YL,LOW(ubmp)                ;  1   Aggiorno le unità dell'ora
+                add     YL,HOUR_U                   ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b00110000             ;  1   Verifico se accendere il primo set SX
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_hh_u,TMP                  ;  2
+
+                ldi     YL,LOW(vbmp)                ;  1   Aggiorno le decine dell'ora
+                add     YL,HOUR_D                   ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b01000000             ;  1   Verifico se accendere la battuta SX
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_hh_d,TMP                  ;  2
+
+                rjmp    disp_clock_ovr              ;  2
+
+non_disp:       WASTE   41
+
+disp_clock_ovr: nop
+                nop
+                ;    2 disponibili
+
+
+
+op02:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+                UP_DATA 02                          ; 12   Aggiorno i piedini di output
+
+                ;14 clock fatti
+
+                ldi     TMP,FUPD                    ;  1   Testo se devo aggiornare i punti
+                and     TMP,FLAGS                   ;  1
+                breq    non_point_u                 ;  1 2
+                andi    FLAGS,~FUPD                 ;  1   Cancello flag
+
+                ldi     YL,LOW(ubmp)                ;  1   Aggiorno le unità DX
+                add     YL,DX_U                     ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b00000010             ;  1   Varifico se accendere secondo set DX
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_dx_u,TMP                  ;  2
+
+                ldi     YL,LOW(vbmp)                ;  1   Aggiorno le decine DX
+                add     YL,DX_D                     ;  1
+                ld      TMP,Y                       ;  2
+                sts     m_dx_d,TMP                  ;  2
+
+                ldi     YL,LOW(ubmp)                ;  1   Aggiorno le unità SX
+                add     YL,SX_U                     ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b00100000             ;  1   Varifico se accendere secondo set SX
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_sx_u,TMP                  ;  2
+
+                ldi     YL,LOW(vbmp)                ;  1   Aggiorno le decine DX
+                add     YL,SX_D                     ;  1
+                ld      TMP,Y                       ;  2
+                sts     m_sx_d,TMP                  ;  2
+
+                rjmp    disp_point_ovr              ;  2
+
+non_point_u:
+
+                WASTE   34
+
+disp_point_ovr:
+                nop
+                nop
+                nop
+                nop
+                ;   4 disponibili
+
+
+
+op03:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+
+                ; 2 clock fatti
+
+                tst     DXADD                       ;  1        Controllo se aumentare il punteggio DX
+                breq    dx_not_add                  ;  1 2      Se non necessario salto oltre
+                dec     DXADD                       ;  1        Abbasso il valore
+                ori     FLAGS,FUPD                  ;  1        Aggiorno il display
+                inc     DX_U                        ;  1        Aumento le unità
+                ldi     TMP,10                      ;  1
+                cp      DX_U,TMP                    ;  1        Controllo se rollover
+                brlo    dx_not_dec                  ;  1   2    Se no salto fuori
+                clr     DX_U                        ;  1        Resetto le unità
+                inc     DX_D                        ;  1        Aumento le decine
+                ldi     TMP,20                      ;  1        Controllo se rollover
+                cp      DX_D,TMP                    ;  1
+                brlo    PC+2                        ;  1     2  Salto l'istruzione successiva
+                clr     DX_D                        ;  1        Altrimenti cancello
+                rjmp    dx_upd_ovr                  ;  2        Salto fuori
+dx_not_add:     WASTE   6                           ;    5
+dx_not_dec:     WASTE   7                           ;    7 7
+dx_upd_ovr:     ; 18 clock fatti
+
+                tst     SXADD                       ;  1        Controllo se aumentare il punteggio SX
+                breq    sx_not_add                  ;  1 2      Se non necessario salto oltre
+                dec     SXADD                       ;  1        Abbasso il valore
+                ori     FLAGS,FUPD                  ;  1        Aggiorno il display
+                inc     SX_U                        ;  1        Aumento le unità
+                ldi     TMP,10                      ;  1
+                cp      SX_U,TMP                    ;  1        Controllo se rollover
+                brlo    sx_not_dec                  ;  1   2    Se no salto fuori
+                clr     SX_U                        ;  1        Resetto le unità
+                inc     SX_D                        ;  1        Aumento le decine
+                ldi     TMP,20                      ;  1        Controllo se rollover
+                cp      SX_D,TMP                    ;  1
+                brlo    PC+2                        ;  1     2  Salto l'istruzione successiva
+                clr     SX_D                        ;  1        Altrimenti cancello
+                rjmp    sx_upd_ovr                  ;  2        Salto fuori
+sx_not_add:     WASTE   6                           ;    5
+sx_not_dec:     WASTE   7                           ;    7 7
+sx_upd_ovr:     ; 34 clock fatti
+
+                WASTE   22
+                ;   22 disponibili
+
+
+
+op04:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+                UP_DATA 04                          ; 12   Aggiorno i piedini di output
+
+                ;14 clock fatti
+
+                tst     DXSUB                       ;  1        Controllo se diminuire il punteggio DX
+                breq    dx_not_sub                  ;  1 2      Se non necessario salto oltre
+                inc     DXSUB                       ;  1        Abbasso il valore
+                ori     FLAGS,FUPD                  ;  1        Aggiorno il display
+                dec     DX_U                        ;  1        Abbasso le unità
+                brpl    dx_not_sde                  ;  1   2    Se non rollover salto oltre
+                ldi     TMP,9                       ;  1        Ricarico le unità
+                mov     DX_U,TMP                    ;  1
+                ldi     TMP,19                      ;  1
+                dec     DX_D                        ;  1        Abbasso le decine
+                brpl    PC+2                        ;  1     2  Se non rollover salto il reload
+                mov     DX_D,TMP                    ;  1        Ricarico le decine
+                rjmp    dx_dec_ovr                  ;  2        Salto fuori
+dx_not_sub:     nop                                 ;    1
+                nop                                 ;    1
+                nop                                 ;    1
+                nop                                 ;    1
+dx_not_sde:     WASTE   7                           ;    7 7
+dx_dec_ovr:     ; 28 clock fatti
+
+                tst     SXSUB                       ;  1        Controllo se diminuire il punteggio SX
+                breq    sx_not_sub                  ;  1 2      Se non necessario salto oltre
+                inc     SXSUB                       ;  1        Abbasso il valore
+                ori     FLAGS,FUPD                  ;  1        Aggiorno il display
+                dec     SX_U                        ;  1        Abbasso le unità
+                brpl    sx_not_sde                  ;  1   2    Se non rollover salto oltre
+                ldi     TMP,9                       ;  1        Ricarico le unità
+                mov     SX_U,TMP                    ;  1
+                ldi     TMP,19                      ;  1
+                dec     SX_D                        ;  1        Abbasso le decine
+                brpl    PC+2                        ;  1     2  Se non rollover salto il reload
+                mov     SX_D,TMP                    ;  1        Ricarico le decine
+                rjmp    sx_dec_ovr                  ;  2        Salto fuori
+sx_not_sub:     nop                                 ;    1
+                nop                                 ;    1
+                nop                                 ;    1
+                nop                                 ;    1
+sx_not_sde:     WASTE   7                           ;    7 7
+sx_dec_ovr:     ; 42 clock fatti
+
+                WASTE   14
+                ;   14 disponibili
+
+
+
+op05:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+                ; 2 clock fatti
+
+                ldi     TMP,FUPMIN                  ;  1   Verifico se aumentare il minuto
+                and     TMP,FLAGS                   ;  1
+
+                breq    no_sum_min                  ;  1 2 Se non serve salto
+                ori     FLAGS,FUPD                  ;  1   Faccio aggiornare il display
+
+                andi    FLAGS,~FUPMIN               ;  1   Resetto il segnale
+                inc     MIN_U                       ;  1   Aumento l'unità del minuto
+                ldi     TMP,10                      ;  1
+                cp      MIN_U,TMP                   ;  1   Controllo se rollover
+                brlo    no_inc_mind                 ;  1   2 Se no salto fuori
+                clr     MIN_U                       ;  1     Altrimenti azzero l'unità del minuto
+                inc     MIN_D                       ;  1     Incremento la decina
+                ldi     TMP,6                       ;  1
+                cp      MIN_D,TMP                   ;  1     Controllo se rollover
+                brlo    no_inc_houru                ;  1     2 Se no salto fuori
+                clr     MIN_D                       ;  1       Altrimenti azzero la decina del minuto
+                inc     HOUR_U                      ;  1       Aumento l'unità dell'ora
+                ldi     HTMP,2                      ;  1       Controllo se dopo le 20:00
+                ldi     TMP,4                       ;  1
+                cpse    HOUR_D,HTMP                 ;  1
+                ldi     TMP,10                      ;  1
+                cp      HOUR_U,TMP                  ;  1       Controllo se rollover
+                brlo    no_inc_hourd                ;  1       2 Se no salto fuori
+                clr     HOUR_U                      ;  1         Azzero l'unità dell'ora
+                inc     HOUR_D                      ;  1         Aumento la decina dell'ora
+                ldi     TMP,3                       ;  1
+                cp      HOUR_D,TMP                  ;  1         Controllo se rollover
+                brlo    PC+2                        ;  1         Se no salto la cancellazione
+                clr     HOUR_D                      ;  1         Azzero la decina dell'ora
+                rjmp    min_inc_over                ;  2
+
+no_sum_min:     WASTE    6                          ;    5
+no_inc_mind:    WASTE    5                          ;    5 5
+no_inc_houru:   WASTE    8                          ;    8 8 8
+no_inc_hourd:   WASTE    7                          ;    7 7 7 7
+min_inc_over:
+                ;32 clock fatti
+
+                WASTE   24
+                ;   24 disponibili
+
+
+
+op06:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+                UP_DATA 06                          ; 12   Aggiorno i piedini di output
+
+                ;14 clock fatti
+
+                clr     TMP                         ;  1   Incremento il numero di cicli trascorsi
+                ser     HTMP                        ;  1
+                sec                                 ;  1
+                adc     RELAP,TMP                   ;  1
+                adc     HRELAP,TMP                  ;  1
+
+                brcc    rec_not_of                  ;  1 2 Se overflow resetto a $FFFF
+                mov     RELAP,HTMP                  ;  1
+                mov     HRELAP,HTMP                 ;  1
+                rjmp    PC+4                        ;  2
+rec_not_of:     nop                                 ;    1
+                nop                                 ;    1
+                nop                                 ;    1
+                in      TMP,PIND                    ;  1   Leggo la porta D
+                andi    TMP,FRLST                   ;  1   Azzero i bit non pertinenti
+                mov     HTMP,FLAGS                  ;  1   Verifico se lo stato è cambiato
+                andi    HTMP,FRLST                  ;  1
+                eor     HTMP,TMP                    ;  1
+                breq    rec_same                    ;  1   2 Se non è cambiato salto fuori
+
+                andi    FLAGS,~FRLST                ;  1   Aggiorno il bit nelle FLAGS
+                ori     TMP,FREC                    ;  1   E segnalo la ricezione
+                or      FLAGS,TMP                   ;  1
+
+                rjmp    rec_out                     ;  2   Termino
+
+rec_same:       nop                                 ;      1
+                nop                                 ;      1
+                nop                                 ;      1
+                nop                                 ;      1
+
+rec_out:        WASTE   21                          ; 21
+                ;   21 disponibili
+
+
+
+op07:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+
+                ldi     TMP,FREC                    ;  1   Controllo se c'è stata una ricezione
+                and     TMP,FLAGS                   ;  1
+                breq    dec_nothing                 ;  1 2 Se non ho ricevuto nulla salto fuori
+
+                andi    FLAGS,~FREC                 ;  1   Azzero il segnale
+                ldi     TMP,FRLST                   ;  1
+                and     TMP,FLAGS                   ;  1   Controllo che bit ho ricevuto
+                brne    zero_rec                    ;  1   2 Se è un uno, significa che il segnale da gestire è uno zero
+                nop                                 ;  1
+
+                ldi     TMP,LOW(UNO2LOW)            ;  1     Controllo se la durata è troppo bassa
+                ldi     HTMP,HIGH(UNO2LOW)          ;  1
+                cp      HRELAP,HTMP                 ;  1
+                brne    PC+2                        ;  1
+                cp      RELAP,TMP                   ;  1
+                brlo    errore_basso                ;  1     2
+
+                ldi     TMP,LOW(UNOTX0)             ;  1     Controllo se si tratta di uno zero
+                ldi     HTMP,HIGH(UNOTX0)           ;  1
+                cp      HRELAP,HTMP                 ;  1
+                brne    PC+2                        ;  1
+                cp      RELAP,TMP                   ;  1
+                brlo    dec_tx0                     ;  1            2
+
+                ldi     TMP,LOW(UNOTX1)             ;  1     Controllo se si tratta di un uno
+                ldi     HTMP,HIGH(UNOTX1)           ;  1
+                cp      HRELAP,HTMP                 ;  1
+                brne    PC+2                        ;  1
+                cp      RELAP,TMP                   ;  1
+                brlo    dec_tx1                     ;  1              2
+
+                rjmp    errore_alto                 ;  2
+
+zero_rec:       ldi     TMP,LOW(ZRO2LOW)            ;      1     Controllo se la durata è troppo bassa
+                ldi     HTMP,HIGH(ZRO2LOW)          ;      1
+                cp      HRELAP,HTMP                 ;      1
+                brne    PC+2                        ;      1
+                cp      RELAP,TMP                   ;      1
+                brlo    errore_basso                ;      1    2
+
+                ldi     TMP,LOW(ZROSEC)             ;      1     Controllo se si tratta di un secondo
+                ldi     HTMP,HIGH(ZROSEC)           ;      1
+                cp      HRELAP,HTMP                 ;      1
+                brne    PC+2                        ;      1
+                cp      RELAP,TMP                   ;      1
+                brlo    dec_txS                     ;      1            2
+
+                ldi     TMP,LOW(ZROMIN)             ;      1     Controllo se si tratta di un minuto
+                ldi     HTMP,HIGH(ZROMIN)           ;      1
+                cp      HRELAP,HTMP                 ;      1
+                brne    PC+2                        ;      1
+                cp      RELAP,TMP                   ;      1
+                brlo    dec_txM                     ;      1      2
+
+                rjmp    errore_alto                 ;      2
+
+errore_basso:   WASTE   13                          ;       13 13 Mi sincronizzo con la parte sotto
+                ;30
+errore_alto:    ldi     YL,LOW(num_of_sec)          ;  1   1 1  1
+                ldi     TMP,$80                     ;  1   1 1  1 Segnalo l'errore
+                st      Y,TMP                       ;  2   2 2  2
+                rjmp    dec_out                     ;  2   2 2  2
+                ;36
+
+dec_nothing:    WASTE   30                          ;   30
+                rjmp    dec_out_1                   ;    2
+
+dec_tx0:        ;23
+                andi    FLAGS,~FRBIT                ;               1
+                nop                                 ;               1
+                nop                                 ;               1
+                nop                                 ;               1
+                nop                                 ;               1
+                rjmp    PC+2                        ;               2
+dec_tx1:        ;29
+                ori     FLAGS,FRBIT                 ;               1
+                ori     FLAGS,FTX                   ;               1 1
+                nop                                 ;               1 1
+                nop                                 ;               1 1
+                nop                                 ;               1 1
+                rjmp    dec_out                     ;               2 2
+                ;36
+
+dec_txS:        ;23
+
+                ldi     YL,LOW(num_of_sec)          ;                   1 Leggo dalla RAM il valore attuale
+                ld      TMP,Y                       ;                   2
+                cpi     TMP,60                      ;                   1 Controllo se è troppo alto
+                brsh    PC+2                        ;                   1 Se è troppo alto non lo aumento più
+                inc     TMP                         ;                   1 Lo aumento di uno
+                st      Y,TMP                       ;                   2 Lo salvo al suo posto
+                rjmp    PC+5                        ;                   2 Salto fuori
+dec_txM:        ;29
+                nop                                 ;             1
+                nop                                 ;             1
+                nop                                 ;             1
+                ori     FLAGS,FMIN                  ;             1
+                nop                                 ;             1     1
+                rjmp    dec_out                     ;             2     2
+                ;36
+
+dec_out:        ;36
+                clr     RELAP                       ;  1   1 1  1 1 1 1 1
+                clr     HRELAP                      ;  1   1 1  1 1 1 1 1
+
+                clr     SX_U
+                clr     SX_D
+                ori     FLAGS,1
+                ldi     YL,LOW(num_of_sec)
+                ld      TMP,Y
+                mov     SXADD,TMP
+
+dec_out_1:
+                WASTE   18                          ; 18181818 1818181818
+
+                ;   18 disponibili
+
+
+
+
+op08:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+                UP_DATA 08                          ; 12   Aggiorno i piedini di output
+
+                ;14 clock fatti
+
+                ldi     TMP,FMIN                    ;  1
+                and     TMP,FLAGS                   ;  1
+                breq    non_min                     ;  1 2
+
+                andi    FLAGS,~FMIN                 ;  1
+                ldi     YL,LOW(num_of_sec)          ;  1
+                ld      TMP,Y+                      ;  2
+
+                cpi     TMP,58                      ;  1
+                brne    min_err                     ;  1   2
+
+                inc     DXADD                       ;  1
+
+                ld      MIN_U,Y+
+                ld      MIN_D,Y+
+                ld      HOUR_U,Y+
+                ld      HOUR_D,Y+
+                clr     SECOND
+                clr     PERIOD
+                ldi     SEC_H,HIGH(SECLOOP)
+                ldi     SEC_L,LOW(SECLOOP)
+                nop                                 ;  1
+                rjmp    min_ex                      ;  2
+
+min_err:        ;inc     DXADD                       ;      1
+                rjmp    min_ex                      ;      2
+non_min:
+                WASTE   12
+                rjmp    min_out
+
+min_ex:         clr     HTMP                        ;  1    Pulisco la SRAM
+                ldi     YL,LOW(num_of_sec)          ;  1
+                st      Y+,HTMP                     ;  2
+                st      Y+,HTMP                     ;  2
+                st      Y+,HTMP                     ;  2
+                st      Y+,HTMP                     ;  2
+                st      Y+,HTMP                     ;  2
+                st      Y+,HTMP                     ;  2
+
+min_out:        WASTE   26
+                ;   38 disponibili
+
+
+
+op09:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+
+                ldi     TMP,FTX                     ;  1
+                and     TMP,FLAGS                   ;  1   Controllo se ho ricevuto qualcosa
+                breq    sec_nul                     ;  1 2 Se no salto fuori (6)
+                com     TMP                         ;  1
+                and     FLAGS,TMP                   ;  1   Resetto la flag di ricezione
+                ldi     TMP,FRBIT                   ;  1
+                and     TMP,FLAGS                   ;  1   Metto in TMP il bit attuale
+                ldi     YL,LOW(num_of_sec)          ;  1
+                ld      HTMP,Y                      ;  2   Leggo il numero del secondo
+
+                ;00 - sempre 0
+                cpi     HTMP,0                      ;  1
+                breq    sec_00                      ;  1   2 Se è il primo secondo elaboro di conseguenza (15)
+
+                ;01/15 - ignoro
+                ;16 - cambio ora
+                cpi     HTMP,16                     ;  1
+                brlo    sec_01_15                   ;  1     2   Salto alla routine 1-15 (17)
+                breq    sec_16                      ;  1       2 Salto alla routine 16 (18)
+
+                ;17 - CEST
+                cpi     HTMP,17                     ;  1
+                breq    sec_17                      ;  1         2 Salto alla routine 17 (20)
+
+                ;18 - CET
+                cpi     HTMP,18                     ;  1
+                breq    sec_18                      ;  1           2 Salto alla routine 18 (22)
+
+                ;19 - leap second
+                cpi     HTMP,19                     ;  1
+                breq    sec_19                      ;  1             2 Salto alla routine 19 (24)
+
+                ;20 - sempre 1
+                cpi     HTMP,20                     ;  1
+                breq    sec_20                      ;  1               2 Salto alla routine 20 (26)
+
+                ;21/24 - min_u
+                cpi     HTMP,25                     ;  1
+                brlo    sec_21_24                   ;  1                 2 Salto alla routine 21-24 (28)
+
+                ;25/27 - min_d
+                ;28 - min_parity
+                cpi     HTMP,28                     ;  1
+                brlo    sec_25_27                   ;  1                   2 Salto alla routine 25-27 (30)
+                breq    sec_28                      ;  1                     2 Salto alla routine 28 (31)
+
+                ;29/32 - hour_u
+                cpi     HTMP,33                     ;  1
+                brlo    sec_29_32                   ;  1                       2 Salto alla routine 29-32 (33)
+
+                ;33/34 - hour_d
+                ;35 - hour_parity
+                cpi     HTMP,35                     ;  1
+                brlo    sec_33_34                   ;  1                         2 Salto alla routine 33-34 (35)
+                breq    sec_35                      ;  1                           2 Salto alla routine 35 (36)
+
+                ;59 - se esistente 0 (leap second)
+                cpi     HTMP,59                     ;  1
+                brlo    sec_36_58                   ;  1                             2 Salto alla routine 36-58 (38)
+                breq    sec_59                      ;  1                               2 Salto alla routine 59 (39)
+                rjmp    sec_err                     ;  2                                   Salto alla routine di errore (40)
+
+sec_nul:        ;nul   - no ricezione ( 6)
+                WASTE   48                          ;   48
+                rjmp    op10                        ;    2
+
+sec_00:         ;00    - sempre 0     (15)
+                tst     TMP                         ;      2
+                breq    PC+4                        ;      1-2
+                ldi     TMP,$80                     ;      1-
+                st      Y,TMP                       ;      2-
+                rjmp    PC+5                        ;      2-
+                nop                                 ;       -1
+                nop                                 ;       -1
+                nop                                 ;       -1
+                nop                                 ;       -1
+                WASTE   31                          ;     31
+                rjmp    op10                        ;      2
+
+sec_01_15:      ;01/15 - ignoro       (17)
+                WASTE   37                          ;       37
+                rjmp    op10                        ;        2
+
+sec_16:         ;16    - cambio ora   (18)
+sec_17:         ;17    - CEST         (20)
+sec_18:         ;18    - CET          (22)
+sec_19:         ;19    - leap second  (24)
+sec_20:         ;20    - sempre 1     (26)
+                WASTE   30
+                rjmp    op10
+sec_21_24:      rjmp    sec_21_24_r
+sec_25_27:      rjmp    sec_25_27_r
+sec_28:         rjmp    sec_28_r
+sec_29_32:      rjmp    sec_29_32_r
+sec_33_34:      rjmp    sec_33_34_r
+sec_35:         ;35    - hour_parity  (36)
+sec_36_58:      ;36-58 - ignoro       (38)
+sec_59:         ;59    - 0 se esiste  (39)
+sec_err:        ;err   - errore       (40)
+                WASTE   14
+                rjmp    op10
+
+sec_21_24_r:    ;21/24 - min_u        (28)
+                ldi     YL,LOW(rminu)               ;                    1
+                ld      HTMP,Y                      ;                    2 Leggo dalla memoria l'attuale valore dell'unità dei minuti
+                lsr     HTMP                        ;                    1 Lo shifto a DX
+                lsr     TMP                         ;                    1
+                lsr     TMP                         ;                    1
+                lsr     TMP                         ;                    1 Shifto a DX il bit ricevuto ottenendo $00 oppure $08
+                or      HTMP,TMP                    ;                    1 Elaboro il nuovo valore
+                st      Y,HTMP                      ;                    2 Lo salvo
+                ldi     YL,LOW(rflags)              ;                    1
+                nop                                 ;                    1
+                ld      HTMP,Y                      ;                    2 Leggo il valore delle flags
+                lsl     TMP                         ;                    1 Alzo il valore alla flag di parità (+1)
+                eor     HTMP,TMP                    ;                    1 Lo aggiorno
+                st      Y,HTMP                      ;                    2 Salvo il nuovo valore
+                WASTE   8                           ;                    8
+                rjmp    op10                        ;                    2
+
+sec_25_27_r:    ;25/27 - min_d        (32)
+                ldi     YL,LOW(rmind)               ;                      1
+                ld      HTMP,Y                      ;                      2 Leggo dalla memoria l'attuale valore dell'unità dei minuti
+                lsr     HTMP                        ;                      1 Lo shifto a DX
+                lsr     TMP                         ;                      1
+                lsr     TMP                         ;                      1
+                lsr     TMP                         ;                      1
+                lsr     TMP                         ;                      1 Shifto a DX il bit ricevuto ottenendo $00 oppure $04
+                or      HTMP,TMP                    ;                      1 Elaboro il nuovo valore
+                st      Y,HTMP                      ;                      2 Lo salvo
+                ldi     YL,LOW(rflags)              ;                      1
+                lsl     TMP                         ;                      1 Alzo il valore alla flag di parità (+1)
+                ld      HTMP,Y                      ;                      2 Leggo il valore delle flags
+                lsl     TMP                         ;                      1 Alzo il valore alla flag di parità (+1)
+                eor     HTMP,TMP                    ;                      1 Lo aggiorno
+                st      Y,HTMP                      ;                      2 Salvo il nuovo valore
+                nop                                 ;                      1
+                nop                                 ;                      1
+                nop                                 ;                      1
+                rjmp    op10                        ;                      2
+
+sec_28_r:       ;28    - min_parity (33)
+                rjmp    op10
+sec_29_32_r:      ;29/32 - hour_u       (35)
+                ldi     YL,LOW(rhourru)             ;                      1
+                ld      HTMP,Y                      ;                      2 Leggo dalla memoria l'attuale valore dell'unità dei minuti
+                lsr     HTMP                        ;                      1 Lo shifto a DX
+                lsr     TMP                         ;                      1
+                lsr     TMP                         ;                      1
+                lsr     TMP                         ;                      1 Shifto a DX il bit ricevuto ottenendo $00 oppure $08
+                or      HTMP,TMP                    ;                      1 Elaboro il nuovo valore
+                st      Y,HTMP                      ;                      2 Lo salvo
+                ldi     YL,LOW(rflags)              ;                      1
+                lsl     TMP                         ;                      1 Alzo il valore alla flag di parità (+1)
+                ld      HTMP,Y                      ;                      2 Leggo il valore delle flags
+                lsl     TMP                         ;                      1 Alzo il valore alla flag di parità (+1)
+                eor     HTMP,TMP                    ;                      1 Lo aggiorno
+                st      Y,HTMP                      ;                      2 Salvo il nuovo valore
+                nop                                 ;                      1
+                rjmp    op10                        ;                      2
+
+sec_33_34_r:      ;33/34 - hour_d       (37)
+                ldi     YL,LOW(rhourrd)             ;                      1
+                ld      HTMP,Y                      ;                      2 Leggo dalla memoria l'attuale valore dell'unità dei minuti
+                lsr     HTMP                        ;                      1 Lo shifto a DX
+                tst     TMP                         ;                      1
+                breq    PC+2                        ;                      1
+                ori     HTMP,2                      ;                      1
+                st      Y,HTMP                      ;                      2 Lo salvo
+                ldi     YL,LOW(rflags)              ;                      1
+                lsr     TMP                         ;                      1 Alzo il valore alla flag di parità (-1)
+                ld      HTMP,Y                      ;                      2 Leggo il valore delle flags
+                eor     HTMP,TMP                    ;                      1 Lo aggiorno
+                st      Y,HTMP                      ;                      2 Salvo il nuovo valore
+                nop                                 ;                      1
+                rjmp    op10                        ;                      2
+
+
+op10:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+                UP_DATA 10                          ; 12   Aggiorno i piedini di output
+
+                ;14 clock fatti
+
+                WASTE   42
+                ;   42 disponibili
+
+
+
+op11:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+
+                ; 2 clock fatti
+
+                WASTE   54
+                ;   54 disponibili
+
+
+
+op12:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+                UP_DATA 12                          ; 12   Aggiorno i piedini di output
+
+                ;14 clock fatti
+
+                WASTE   42
+                ;   42 disponibili
+
+
+
+op13:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+
+                ; 2 clock fatti
+
+                WASTE   54
+                ;   54 disponibili
+
+
+
+op14:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+                UP_DATA 14                          ; 12   Aggiorno i piedini di output
+
+                ;14 clock fatti
+
+                WASTE   42
+                ;   42 disponibili
+
+
+
+op15:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+                cbi     PORTD,LTC                   ;  2   Abbasso il latch
+
+                lsl     CNT_MSK                     ;  1      Shifto a SX la mashera delle X
+                brne    n_msk_ptr_rel               ;  2 1    Se non è zero salto la ricarica dei valori
+                ldi     CNT_MSK,1                   ;    1    Carico a 1 il contatore delle X
+                ldi     XL,LOW(mask)                ;    1    Carico il puntatore alla maschera
+                rjmp    msk_ptr_read                ;    2    Salto alla lettura dei puntatori
+
+n_msk_ptr_rel:  nop                                 ;  1      Sincronizzo
+                nop                                 ;  1
+                nop                                 ;  1
+
+msk_ptr_read:   mov     XDT_MSK,CNT_MSK             ;  1      Metto la nuova maschera X pari al contatore
+                ld      YDT_MSK,X+                  ;  2      Leggo dalla SRAM la nuova maschera Y
+
+                ;13 clock fatti
+
+                WASTE   43
+                ;   43 disponibili
+
+
+
+op00:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+                sbi     PIND,LTC                    ;  2   Toggle del bit di latch
+                UP_DATA 00                          ; 12
+
+                sbiw    SEC_L,1                     ;  2      Decremento il contatore secondi
+                brne    skip_sec_rel                ;  2 1    Se non azzerato vado avanti
+
+                ldi     SEC_H,HIGH(SECLOOP)         ;    1    Ricarico il contatore secondi
+                ldi     SEC_L,LOW(SECLOOP)          ;    1
+                ldi     TMP,3                       ;    1
+                and     TMP,PERIOD                  ;    1    Se ho finito il secondo 0 o 4, ricarico uno in più
+                brne    PC+2                        ;    1
+                inc     SEC_L                       ;    1
+
+                inc     PERIOD                      ;    1    Incremento il contatore del periodo
+                cpi     PERIOD,7                    ;    1
+                brlo    PC+2                        ;    1
+                clr     PERIOD                      ;    1
+
+on_sec_op:      ;26
+                ldi     TMP,HLTC                    ;    1 1  Toggle della maschera del latch
+                eor     HFLAGS,TMP                  ;    1 1
+
+                inc     SECOND                      ;    1 1  Aumento i secondi
+                ldi     TMP,60                      ;    1 1  Metto in TMP il numero di secondi del minuto
+                ldi     HTMP,FLPSEC                 ;    1 1
+                and     HTMP,FLAGS                  ;    1 1
+                lsr     HTMP                        ;    1 1
+                lsr     HTMP                        ;    1 1
+                add     TMP,HTMP                    ;    1 1  Aggiungo un secondo nel caso di leap second
+                cp      SECOND,TMP                  ;    1 1
+                brlo    no_min_rel                  ;    1 1 2 Vedo se sono ad un minuto
+                ori     FLAGS,FUPMIN                ;    1 1  Segnalo di aumentare il minuto
+                clr     SECOND                      ;    1 1  Azzero i secondi
+
+                nop
+                nop
+                nop
+                nop
+                rjmp    repeat
+
+                rjmp    non_sec_rel                 ;    2 2
+
+no_min_rel:     nop                                 ;        1
+                rjmp    non_sec_rel                 ;        2
+
+skip_sec_rel:   ;20
+                WASTE   25                          ; 21      Spreco 21 cicli
+
+non_sec_rel:    ;44
+
+                WASTE    7
+                ;ora come ora è possibile inserire 9 istr. qui
+                ;Dividere ricarica secondi dal resto guadagnando qualche istruzione/loop ?
+
+repeat:         cbi     PORTD,RDY                   ;  2      Attivo l'output dei chip
+                rjmp    main_loop                   ;  2      Riparto da capo
+
+
+                ;Data to be loaded in SRAM at startup
+
+                .org   (PC + ((0 - (PC & $7F)) & $7F))  ;align to the next 256 word boundary
+
+load_flash:
+
+mask_bank:      .db     $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+
+ubmp_bank:      .db     $81,$CF,$92,$86,$CC,$A4,$A0,$8F,$80,$84,$88,$E0,$B1,$C2,$B0,$B8
+;
+;    UBMP:
+;
+;        6
+;    1       5
+;        0
+;    2       4
+;        3
+;
+;    active LOW (0 = ON, 1 = OFF)
+;    (bit 7 set to 1 = OFF)
+;
+
+dbmp_bank:      .db     $81,$F9,$A4,$B0,$D8,$92,$82,$B9,$80,$90,$88,$C2,$87,$E0,$86,$8E
+;
+;    DBMP:
+;
+;        6
+;    5       1
+;        0
+;    4       2
+;        3
+;
+;    active LOW (0 = ON, 1 = OFF)
+;    (bit 7 set to 1 = OFF)
+;
+
+vbmp_bank:      .db     $FF,$F9,$A4,$B0,$D8,$92,$82,$B9,$80,$90,$01,$79,$24,$30,$58,$12,$02,$39,$00,$10
+
+rec_bnk:        .db     $00,$00,$00,$00,$00,$00
+time_bnk:       .db     $00,$00,$00,$00,$00,$00
+
+                ;End of flash section loaded in sram at startup - check size
+load_flash_end:
+                .if     ((load_flash_end - load_flash) > (($100 / 2) - 1))
+                    .warning "More than 127 words (254 bytes) of flash used by data to be loaded in SRAM! "
+                .endif
+
+				;Flash and EEPROM signatures
+				.db 	"[ (C) Michele 'Micccy' Giacomone - mictronic5677 scoreboard - %YEAR%-%MONTH%-%DAY% %HOUR%:%MINUTE% ] ",$00	;FLASH Signature
+				.eseg
+				.db 	"[ (C) Michele 'Micccy' Giacomone - mictronic5677 scoreboard - %YEAR%-%MONTH%-%DAY% %HOUR%:%MINUTE% ] ",$00	;EEPROM Signature
