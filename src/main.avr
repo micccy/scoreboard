@@ -2,8 +2,7 @@
 
                 .cseg                       ;Interrupt Vector Table
                 .org    $0000				;Start of Application Memory
-                rjmp    reset               ;Reset
-                nop
+                jmp     reset               ;Reset
                 reti                        ;IRQ0 Handler
                 nop
                 reti                        ;IRQ1 Handler
@@ -54,7 +53,7 @@
                 nop
                 reti                        ;Store Program Memory Ready Handler
                 nop
-ivtdone:									;Address first free program word
+ivtdone:									;Address of first free program word
 
 
                 ;Definitions
@@ -141,7 +140,7 @@ ivtdone:									;Address first free program word
 
                 ;Macro definitions
 
-                .macro  WASTE                       ;  Minimo 5 colpi di clock (= 1.25 us), massimo 772 (= 193 us)
+                .macro  WASTE                       ;  Min 5 clock cycles (= 1.25 us), max 772 (= 193 us)
                 ldi     TMP,((@0-5)/3)+1            ;  1
                 dec     TMP                         ;  1
                 brne    PC-1                        ;  1 2
@@ -152,23 +151,23 @@ ivtdone:									;Address first free program word
 
                 .macro  UP_DATA
 
-                rol     XDT_MSK                     ;  1   Metto nel Carry il bit più significativo di X data
-                brcs    x@0c                        ;  1 2 Se è un uno salta
-                cbi     PORTD,XDT                   ;  2   Altrimenti azzera il bit
-                rjmp    x@0_over                    ;  2   Continua
-x@0c:           sbi     PORTD,XDT                   ;    2 Se è un uno Accendo il bit relativo
+                rol     XDT_MSK                     ;  1   Put X data's msb into the Carry flag
+                brcs    x@0c                        ;  1 2 If it's one branch
+                cbi     PORTD,XDT                   ;  2   Otherwise clear output
+                rjmp    x@0_over                    ;  2   Skip over next instruction
+x@0c:           sbi     PORTD,XDT                   ;    2 Set output
                 nop                                 ;    1
 x@0_over:
 
-                rol     YDT_MSK                     ;  1   Metto nel Carry il bit più significativo di Y data
-                brcs    y@0c                        ;  1 2 Se è un uno salto
-                cbi     PORTD,YDT                   ;  2   Altrimenti azzero il bit
-                rjmp    y@0_over                    ;  2   Continua
-y@0c:           sbi     PORTD,YDT                   ;    2 Setto il bit
+                rol     YDT_MSK                     ;  1   Put Y data's msb into the Carry flag
+                brcs    y@0c                        ;  1 2 If it's one branch
+                cbi     PORTD,YDT                   ;  2   Otherwise clear output
+                rjmp    y@0_over                    ;  2   Skip over next instruction
+y@0c:           sbi     PORTD,YDT                   ;    2 Set output
                 nop                                 ;    1
 y@0_over:
 
-                ;12 clock consumati
+                ;12 clock used
 
                 .endmacro
                 .listmac
@@ -180,7 +179,7 @@ y@0_over:
                 .org    $0100
                 ;SRAM loaded at startup
 load_sram:
-mask:                                               ;Descrizione dei segmenti
+mask:                                               ;Current segment descriptions
 m_dx_u:         .byte    1                          ;
 m_dx_d:         .byte    1                          ;
 m_sx_u:         .byte    1                          ;
@@ -189,29 +188,29 @@ m_mm_u:         .byte    1                          ;
 m_mm_d:         .byte    1                          ;
 m_hh_u:         .byte    1                          ;
 m_hh_d:         .byte    1                          ;
-ubmp:           .byte   16                          ;Copia sorgente per le maschere delle unità
-dbmp:           .byte   16                          ;Copia sorgente per le maschere delle decine
-vbmp:           .byte   20                          ;Copia sorgente per le maschere delle decine, no zero iniziale, con eventuale uno del centinaio
+ubmp:           .byte   16                          ;Units place source masks array
+dbmp:           .byte   16                          ;Tens place source masks array
+vbmp:           .byte   20                          ;Tens place source masks array, blank for zero, eventual one for hundreds place
 
-num_of_sec:     .byte    1                          ;Numero dei secondi trascorsi
-rminu:          .byte    1                          ;Cifra dell'unità dei minuti ricevuta
-rmind:          .byte    1                          ;Cifra delle decine dei minuti ricevuta
-rhourru:        .byte    1                          ;Cifra dell'unità delle ore ricevuta
-rhourrd:        .byte    1                          ;Cifra delle decine dell'ora ricevuta
-rflags:         .byte    1                          ;Dati su ora legale, leap second e parità ricevuti
+num_of_sec:     .byte    1                          ;Seconds elapsed
+rminu:          .byte    1                          ;Received minute's units
+rmind:          .byte    1                          ;Received minute's tens
+rhourru:        .byte    1                          ;Received hour's units
+rhourrd:        .byte    1                          ;Received hour's tens
+rflags:         .byte    1                          ;Flags such as dst, leap seconds, parity...
 
-t_sec:          .byte    1                          ;Secondo attuale
-t_min_u:        .byte    1                          ;Unità del minuto attuale
-t_min_d:        .byte    1                          ;Decina del minuto attuale
-t_hour_u:       .byte    1                          ;Unità dell'ora attuale
-t_hour_d:       .byte    1                          ;Decina dell'ora attuale
-t_flags:        .byte    1                          ;Dati su ora legale, leap second e parità
+t_sec:          .byte    1                          ;Current second
+t_min_u:        .byte    1                          ;Current minute's units
+t_min_d:        .byte    1                          ;Current minute's tens
+t_hour_u:       .byte    1                          ;Current hour's units
+t_hour_d:       .byte    1                          ;Current hour's tens
+t_flags:        .byte    1                          ;Flags such as dst, leap seconds, parity...
 
 				;SRAM not loaded at startup
 
                 ;Main program
 
-                .cseg                               ;Codice dopo tabella vettori
+                .cseg                               ;Code positioned right after the interrupt vector table
                 .org    ivtdone
 reset:
                 ldi     TMP,0b11111111              ;Imposto PORTB a 1111_1111 (FF)
