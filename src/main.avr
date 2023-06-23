@@ -63,9 +63,13 @@ ivtdone:									;Address of first free program word
                 .equ	PORTD	= $0B
                 .equ	PORTC	= $08
                 .equ	PORTB	= $05
-
+				.equ	ACSR	= $30
+				.equ 	MCUSR	= $34
                 .equ	SPL	    = $3D
                 .equ	SPH	    = $3E
+
+				.equ 	WDTCSR 	= $60
+				.equ	PRR		= $64
 
                 .equ	RAMEND	= $08FF
 
@@ -78,6 +82,20 @@ ivtdone:									;Address of first free program word
                 .equ    ZRO2LOW =  2526
                 .equ    ZROSEC  =  5682
                 .equ    ZROMIN  = 11995
+
+				.equ	WDRF	= 0b00001000
+				.equ	WDCE	= 0b00010000
+				.equ	WDE		= 0b00001000
+
+				.equ	ACD		= 0b10000000
+
+				.equ	PRADC	= 0b00000001
+				.equ	PRUSART0= 0b00000010
+				.equ	PRSPI	= 0b00000100
+				.equ	PRTIM1	= 0b00001000
+				.equ	PRTIM0	= 0b00100000
+				.equ	PRTIM2	= 0b01000000
+				.equ	PRTWI	= 0b10000000
 
                 .equ    FUPD    = 0b00000001
                 .equ    FUPMIN  = 0b00000010
@@ -213,6 +231,8 @@ t_flags:        .byte    1                          ;Flags such as dst, leap sec
                 .cseg                               ;Code positioned right after the interrupt vector table
                 .org    ivtdone
 reset:
+				wdr									;Reset watchdog timer if enabled
+
                 ldi     TMP,0b11111111              ;Imposto PORTB a 1111_1111 (FF)
                 out     PORTB,TMP                   ;(PULLUP attivati in tutti i pin della porta B)
 
@@ -229,6 +249,23 @@ reset:
                 out     SPH,TMP                     ;
                 ldi     TMP,LOW(RAMEND)             ;
                 out     SPL,TMP                     ;
+
+				in		TMP,MCUSR					;Clear watchdog reset flag if set
+				andi	TMP,~WDRF					;
+				out 	MCUSR,TMP					;
+
+				lds		TMP,WDTCSR					;Enable writes to watchdog control bits
+				ori		TMP,WDCE|WDE				;
+				sts		WDTCSR,TMP					;Now we have 4 clock cycles to change them
+				andi	TMP,0b10000000				;Disable watchdog if enabled by software, set prescaler to 2k cycles and reset interrupt flag if set
+				sts		WDTCSR,TMP					;
+
+				ldi		TMP,ACD						;Disable analog comparator
+				out		ACSR,TMP					;
+
+				lds		TMP,PRR						;Disable clock to unused modules
+				ori		TMP,PRTWI|PRTIM2|PRTIM0|PRTIM1|PRSPI|PRUSART0|PRADC	;
+				sts		PRR,TMP						;
 
                 ldi     XH,HIGH(load_sram)          ;Imposto puntatore alla SRAM
                 ldi     XL,LOW(load_sram)           ;
@@ -275,7 +312,7 @@ sram_setup:     lpm     TMP,Z+                      ;Leggo la memoria FLASH
 
                 clr     RELAP                       ;Azzero il contatore di ricezione
                 clr     HRELAP                      ;
-                                
+
                 ;Pin D0 = Y - DATA
                 ;Pin D1 = X - DATA
                 ;Pin D2 = CLOCK
@@ -333,8 +370,8 @@ op01:           sbi     PIND,CLK                    ;  2   Toggle del bit di clo
 op01_tog:       nop                                 ;    1
                 nop                                 ;    1
                 nop                                 ;    1
-op01_tend:
-                ; 8 clock fatti
+op01_tend:		wdr									;  1 1 Reset watchdog timer if enabled
+                ; 9 clock fatti
 
 disp_clock:     ldi     TMP,FUPD                    ;  1   Testo se devo aggiornare l'orologio
                 and     TMP,FLAGS                   ;  1
@@ -381,8 +418,7 @@ disp_clock:     ldi     TMP,FUPD                    ;  1   Testo se devo aggiorn
 non_disp:       WASTE   41
 
 disp_clock_ovr: nop
-                nop
-                ;    2 disponibili
+                ;    1 disponibile
 
 
 
