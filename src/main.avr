@@ -86,6 +86,7 @@ ivtdone:									;Address of first free program word
 				.equ	WDRF	= 0b00001000
 				.equ	WDCE	= 0b00010000
 				.equ	WDE		= 0b00001000
+				.equ	WDIF	= 0b10000000
 
 				.equ	ACD		= 0b10000000
 
@@ -233,19 +234,20 @@ t_flags:        .byte    1                          ;Flags such as dst, leap sec
 reset:
 				wdr									;Reset watchdog timer if enabled
 
-                ldi     TMP,0b11111111              ;Imposto PORTB a 1111_1111 (FF)
-                out     PORTB,TMP                   ;(PULLUP attivati in tutti i pin della porta B)
+                ldi     TMP,0b11111111              ;Set PORTB to 1111_1111 (FF)
+                out     PORTB,TMP                   ;(All PORTB pullups enabled)
 
-                ldi     TMP,0b01111111              ;Imposto PORTC a 0111_1111 (7F)
-                out     PORTC,TMP                   ;(PULLUP attivati in tutti i bit della porta C, msb inutilizzato)
+                ldi     TMP,0b01111111              ;Set PORTB to 0111_1111 (7F)
+                out     PORTC,TMP                   ;(All PORTB pullups enabled, msb unused)
 
-                ldi     TMP,0b11011001              ;Imposto PORTD a 1101_1001 (7) (R0 E1 L1 C0 X0 Y1)
-                out     PORTD,TMP                   ;(PULLUP attivati negli altri pin)
+                ldi     TMP,0b11011001              ;Set PORTD to 1101_1001 (D9) (R0 E1 L1 C0 X0 Y1)
+                out     PORTD,TMP                   ;(Lower 5 PORTD pins set to their future output values, bit5 pullup disabled
+			 										;other pullups enabled)
 
-                ldi     TMP,0b00011111              ;Imposto DDRD a 0001_1111 (F)
-                out     DDRD,TMP                    ;I 5 pin bassi li uso come output
+                ldi     TMP,0b00011111              ;Set DDRD to 0001_1111 (1F)
+                out     DDRD,TMP                    ;(Lower 5 PORTD pins set to output)
 
-                ldi     TMP,HIGH(RAMEND)            ;Imposto lo stack Pointer al massimo della RAM
+                ldi     TMP,HIGH(RAMEND)            ;Set stack pointer to end of RAM
                 out     SPH,TMP                     ;
                 ldi     TMP,LOW(RAMEND)             ;
                 out     SPL,TMP                     ;
@@ -257,7 +259,8 @@ reset:
 				lds		TMP,WDTCSR					;Enable writes to watchdog control bits
 				ori		TMP,WDCE|WDE				;
 				sts		WDTCSR,TMP					;Now we have 4 clock cycles to change them
-				andi	TMP,0b10000000				;Disable watchdog if enabled by software, set prescaler to 2k cycles and reset interrupt flag if set
+				andi	TMP,WDIF					;Disable watchdog if enabled by software, set prescaler to 2k cycles and
+													;reset interrupt flag if set
 				sts		WDTCSR,TMP					;
 
 				ldi		TMP,ACD						;Disable analog comparator
@@ -267,50 +270,50 @@ reset:
 				ori		TMP,PRTWI|PRTIM2|PRTIM0|PRTIM1|PRSPI|PRUSART0|PRADC	;
 				sts		PRR,TMP						;
 
-                ldi     XH,HIGH(load_sram)          ;Imposto puntatore alla SRAM
+                ldi     XH,HIGH(load_sram)          ;Set a pointer to SRAM destination start
                 ldi     XL,LOW(load_sram)           ;
-                ldi     SXSUB,HIGH(load_flash*2)    ;Imposto puntatore alla FLASH
-                ldi     DXSUB,LOW(load_flash*2)     ;Raddoppiato trattandosi di word e non di byte
-                ldi     YH,HIGH(load_flash_end*2)   ;Imposto puntatore alla fine della FLASH
-                ldi     YL,LOW(load_flash_end*2)    ;Raddoppiato trattandosi di word e non di byte
+                ldi     SXSUB,HIGH(load_flash*2)    ;Set a pointer to FLASH source start
+                ldi     DXSUB,LOW(load_flash*2)     ;Doubled since FLASH is made of 16bit words and not bytes
+                ldi     YH,HIGH(load_flash_end*2)   ;Set a pointer to FLASH source end
+                ldi     YL,LOW(load_flash_end*2)    ;Doubled since FLASH is made of 16 bit words and not bytes
 
-sram_setup:     lpm     TMP,Z+                      ;Leggo la memoria FLASH
-                st      X+,TMP                      ;Scrivo il valore nella SRAM
-                cp      SXSUB,YH                    ;Ripeto fino alla fine
+sram_setup:     lpm     TMP,Z+                      ;Read a byte from FLASH, post-increment pointer
+                st      X+,TMP                      ;Write said byte in SRAM, post-increment pointer
+                cp      SXSUB,YH                    ;Keep going
                 brne    sram_setup                  ;
                 cp      DXSUB,YL                    ;
-                brne    sram_setup                  ;Della flash
+                brne    sram_setup                  ;until the source ends
 
-                ldi     XH,HIGH(load_sram)          ;Preparo la parte alta dei puntatori
-                ldi     YH,HIGH(load_sram)          ;Alla SRAM
+                ldi     XH,HIGH(load_sram)          ;Set pointers high byte to start of SRAM loaded data section
+                ldi     YH,HIGH(load_sram)          ;
 
-                ldi     SEC_H,HIGH(SECLOOP)         ;Preparo il contatore per i secondi
+                ldi     SEC_H,HIGH(SECLOOP)         ;Set real-time second detection data
                 ldi     SEC_L,LOW(SECLOOP)          ;
                 clr     PERIOD                      ;
 
-                clr     CNT_MSK                     ;Metto a zero il contatore delle X
+                clr     CNT_MSK                     ;Clear X loop register
 
-                ser     YDT_MSK                     ;Imposto per il primo giro tutto spento
+                ser     YDT_MSK                     ;Set every segment off for the first run
                 clr     XDT_MSK                     ;
 
-                clr     MIN_U                       ;Azzero l'ora
+                clr     MIN_U                       ;Clear time information
                 clr     MIN_D                       ;
                 clr     HOUR_U                      ;
                 clr     HOUR_D                      ;
                 clr     SECOND                      ;
 
-                clr     DX_U                        ;Azzero il punteggio DX
+                clr     DX_U                        ;Clear DX (== Right == home) score
                 clr     DX_D                        ;
-                clr     SX_U                        ;Azzero il punteggio SX
+                clr     SX_U                        ;Clear SX (== Left == guest) score
                 clr     SX_D                        ;
-                clr     SETBAT                      ;Azzero i set e la battuta
+                clr     SETBAT                      ;Clear Sets and Serve
 
-                clr     DXADD                       ;Azzero i registri del punteggio
+                clr     DXADD                       ;Clear score increment/decrement registers
                 clr     SXADD                       ;
                 clr     DXSUB                       ;
                 clr     SXSUB                       ;
 
-                clr     RELAP                       ;Azzero il contatore di ricezione
+                clr     RELAP                       ;Clear reception counter
                 clr     HRELAP                      ;
 
                 ;Pin D0 = Y - DATA
@@ -321,42 +324,42 @@ sram_setup:     lpm     TMP,Z+                      ;Leggo la memoria FLASH
                 ;Pin D4 = OE - READY
                 ;Pin D5 = DCF77 DATA
 
-                ldi     FLAGS,0b00000001            ;Aggiornare orologio
+                ldi     FLAGS,FUPD		           	;Set clock to update
                 in      TMP,PORTD                   ;
                 andi    TMP,FRLST                   ;
-                or      FLAGS,TMP                   ;Flag di ricezione al valore attuale
+                or      FLAGS,TMP                   ;Read current reception bit and set flag accordingly
 
-                clr     HFLAGS                      ;Flag alta spenta
+                clr     HFLAGS                      ;Clear high flag
 
                 ;SETBAT:
                 ;0000-00xx set DX
-                ;0000-0x00 battuta DX
+                ;0000-0x00 serve DX
                 ;00xx-0000 set SX
-                ;0x00-0000 battuta SX
+                ;0x00-0000 serve SX
 
                 ;FLAGS:
-                ;0000-000x aggiornare display
-                ;0000-00x0 aumentare ora
-                ;0000-0x00 minuto con leap second
-                ;0000-x000 ricevuto segnale di inizio minuto
+                ;0000-000x update display
+                ;0000-00x0 increment hour
+                ;0000-0x00 leap second minute
+                ;0000-x000 minut start syncing signal received
 
-                ;000x-0000 segnalo cambiamento di stato del ricevitore
-                ;00x0-0000 ultimo stato del ricevitore
-                ;0x00-0000 ultimo bit ricevuto da dcf77
-                ;x000-0000 segnalo ricezione bit da dcf77
+                ;000x-0000 receiver changed state
+                ;00x0-0000 last received state
+                ;0x00-0000 last bit received from dcf77
+                ;x000-0000 signal a bit reception dcf77
 
                 ;HFLAGS:
-                ;0000-000x stato di riposo del latch (' : ' nell'ora)
+                ;0000-000x latch rest state (used to control clock's ' : ' colon)
 
                 ;t_flags:
-                ;0000-000x avviso di cambio ora
+                ;0000-000x dst change warning
                 ;0000-00x0 CEST
                 ;0000-0x00 CET
-                ;0000-x000 avviso di leap second
+                ;0000-x000 leap second warning
 
-                ;000x-0000 parità minuti
-                ;00x0-0000 parità ore
-                ;0x00-0000 parità data
+                ;000x-0000 minute parity
+                ;00x0-0000 houre parity
+                ;0x00-0000 date parity
 
 main_loop:                                          ;16 operazioni da qui (56 instr x16 @ 4MHz)
 
