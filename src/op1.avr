@@ -1,0 +1,60 @@
+				; 2 clock cycles used - 54 remaining
+
+                ldi     TMP,HLTC                    ;  1
+                and     TMP,HFLAGS                  ;  1   		Check if latch must be left high
+                brne    op1_tog                     ;  1 2 		If yes jump over and waste time
+                sbi     PIND,LTC                    ;  2   		Otherwise clear it
+                rjmp    op1_tend                    ;  2
+op1_tog:        nop                                 ;    1
+                nop                                 ;    1
+                nop                                 ;    1
+op1_tend:		wdr									;  1 1 		Reset watchdog timer if enabled
+
+disp_clock:     ldi     TMP,FUPD                    ;  1   		Check if the display must be updated
+                and     TMP,FLAGS                   ;  1
+                breq    non_disp                    ;  1 2		If not jump over and do something else/waste time
+
+                ldi     YL,LOW(ubmp)                ;  1   		Update minute units place
+                add     YL,MIN_U                    ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b00000100             ;  1   		Turn on DX Serve if needed
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_mm_u,TMP                  ;  2
+
+                ldi     YL,LOW(dbmp)                ;  1   		Update minute tens place
+                add     YL,MIN_D                    ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b00000011             ;  1   		Turn on DX first Set if needed
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_mm_d,TMP                  ;  2
+
+                ldi     YL,LOW(ubmp)                ;  1   		Update hour units place
+                add     YL,HOUR_U                   ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b00110000             ;  1   		Turn on SX first Set if needed
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_hh_u,TMP                  ;  2
+
+                ldi     YL,LOW(vbmp)                ;  1		Update hour tens place
+                add     YL,HOUR_D                   ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b01000000             ;  1   		Turn on SX Serve if needed
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_hh_d,TMP                  ;  2
+
+                rjmp    disp_clock_ovr              ;  2
+
+non_disp:       WASTE   41
+
+disp_clock_ovr:
+				nop									;  1
+
+                ;    1 clock cycle available at the end - 41 partially available

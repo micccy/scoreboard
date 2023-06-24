@@ -42,3 +42,4 @@ load_flash_end:
                 .if     ((load_flash_end - load_flash) > (($100 / 2) - 1))
                     .warning "More than 127 words (254 bytes) of flash used by data to be loaded in SRAM! "
                 .endif
+loaddone:

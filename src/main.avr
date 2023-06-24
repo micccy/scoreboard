@@ -11,126 +11,27 @@
 				.include "src/lib/reset.avr"		;Bootstrap code
 
                 ;Main program
+                .cseg                               ;Code positioned right after the bootstrap code
+                .org    resetdone
 main_loop:                                          ;Main loop is made of 16 operations that must consume exactly 56 clock cycles each
 
-op01:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+op1:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
+				; 2 clock cycles used - 54 remaining
+				.include "src/op1.avr"
+                ; 1 clock cycle available at the end - 41 partially available
+				;Set serial latch (also used for the ' : ' colon in the displayed time) as needed
+				;Reset watchdog timer if still enabled (e.g. by fuse bits)
+				;Update displayed time, Serve and first Set indicators if the display update flag is set
 
-                ldi     TMP,HLTC                    ;  1
-                and     TMP,HFLAGS                  ;  1   Verifico se il latch va lasciato alto
-                brne    op01_tog                    ;  1 2 Se è vero salto e perdo tempo
-                sbi     PIND,LTC                    ;  2   Altrimenti lo abbasso
-                rjmp    op01_tend                   ;  2
-op01_tog:       nop                                 ;    1
-                nop                                 ;    1
-                nop                                 ;    1
-op01_tend:		wdr									;  1 1 Reset watchdog timer if enabled
-                ; 9 clock fatti
+op2:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
+                UP_DATA 2                           ; 12   		Set serial data output bits
+				;14 clock cycles used - 42 remaining
+				.include "src/op2.avr"
+                ; 4 clock cycles available at the end - 34 partially available
+				;Update displayed SX/DX scores and second Set indicators if the display update flag is set, then clear it
 
-disp_clock:     ldi     TMP,FUPD                    ;  1   Testo se devo aggiornare l'orologio
-                and     TMP,FLAGS                   ;  1
-                breq    non_disp                    ;  1 2
-
-                ldi     YL,LOW(ubmp)                ;  1   Aggiorno le unità del minuto
-                add     YL,MIN_U                    ;  1
-                ld      TMP,Y                       ;  2
-                ldi     HTMP,0b00000100             ;  1   Verifico se accendere la battuta DX
-                and     HTMP,SETBAT                 ;  1
-                breq    PC+2                        ;  1 2
-                andi    TMP,$7F                     ;  1
-                sts     m_mm_u,TMP                  ;  2
-
-                ldi     YL,LOW(dbmp)                ;  1   Aggiorno le decine del minuto
-                add     YL,MIN_D                    ;  1
-                ld      TMP,Y                       ;  2
-                ldi     HTMP,0b00000011             ;  1   Verifico se accendere il primo set DX
-                and     HTMP,SETBAT                 ;  1
-                breq    PC+2                        ;  1 2
-                andi    TMP,$7F                     ;  1
-                sts     m_mm_d,TMP                  ;  2
-
-                ldi     YL,LOW(ubmp)                ;  1   Aggiorno le unità dell'ora
-                add     YL,HOUR_U                   ;  1
-                ld      TMP,Y                       ;  2
-                ldi     HTMP,0b00110000             ;  1   Verifico se accendere il primo set SX
-                and     HTMP,SETBAT                 ;  1
-                breq    PC+2                        ;  1 2
-                andi    TMP,$7F                     ;  1
-                sts     m_hh_u,TMP                  ;  2
-
-                ldi     YL,LOW(vbmp)                ;  1   Aggiorno le decine dell'ora
-                add     YL,HOUR_D                   ;  1
-                ld      TMP,Y                       ;  2
-                ldi     HTMP,0b01000000             ;  1   Verifico se accendere la battuta SX
-                and     HTMP,SETBAT                 ;  1
-                breq    PC+2                        ;  1 2
-                andi    TMP,$7F                     ;  1
-                sts     m_hh_d,TMP                  ;  2
-
-                rjmp    disp_clock_ovr              ;  2
-
-non_disp:       WASTE   41
-
-disp_clock_ovr: nop
-                ;    1 disponibile
-
-
-
-op02:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-                UP_DATA 02                          ; 12   Aggiorno i piedini di output
-
-                ;14 clock fatti
-
-                ldi     TMP,FUPD                    ;  1   Testo se devo aggiornare i punti
-                and     TMP,FLAGS                   ;  1
-                breq    non_point_u                 ;  1 2
-                andi    FLAGS,~FUPD                 ;  1   Cancello flag
-
-                ldi     YL,LOW(ubmp)                ;  1   Aggiorno le unità DX
-                add     YL,DX_U                     ;  1
-                ld      TMP,Y                       ;  2
-                ldi     HTMP,0b00000010             ;  1   Varifico se accendere secondo set DX
-                and     HTMP,SETBAT                 ;  1
-                breq    PC+2                        ;  1 2
-                andi    TMP,$7F                     ;  1
-                sts     m_dx_u,TMP                  ;  2
-
-                ldi     YL,LOW(vbmp)                ;  1   Aggiorno le decine DX
-                add     YL,DX_D                     ;  1
-                ld      TMP,Y                       ;  2
-                sts     m_dx_d,TMP                  ;  2
-
-                ldi     YL,LOW(ubmp)                ;  1   Aggiorno le unità SX
-                add     YL,SX_U                     ;  1
-                ld      TMP,Y                       ;  2
-                ldi     HTMP,0b00100000             ;  1   Varifico se accendere secondo set SX
-                and     HTMP,SETBAT                 ;  1
-                breq    PC+2                        ;  1 2
-                andi    TMP,$7F                     ;  1
-                sts     m_sx_u,TMP                  ;  2
-
-                ldi     YL,LOW(vbmp)                ;  1   Aggiorno le decine DX
-                add     YL,SX_D                     ;  1
-                ld      TMP,Y                       ;  2
-                sts     m_sx_d,TMP                  ;  2
-
-                rjmp    disp_point_ovr              ;  2
-
-non_point_u:
-
-                WASTE   34
-
-disp_point_ovr:
-                nop
-                nop
-                nop
-                nop
-                ;   4 disponibili
-
-
-
-op03:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-
-                ; 2 clock fatti
+op3:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
+                ; 2 clock cycles used - 54 remaining
 
                 tst     DXADD                       ;  1        Controllo se aumentare il punteggio DX
                 breq    dx_not_add                  ;  1 2      Se non necessario salto oltre
@@ -175,10 +76,9 @@ sx_upd_ovr:     ; 34 clock fatti
 
 
 
-op04:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-                UP_DATA 04                          ; 12   Aggiorno i piedini di output
-
-                ;14 clock fatti
+op4:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
+                UP_DATA 4                           ; 12   		Set serial data output bits
+				;14 clock cycles used - 42 remaining
 
                 tst     DXSUB                       ;  1        Controllo se diminuire il punteggio DX
                 breq    dx_not_sub                  ;  1 2      Se non necessario salto oltre
@@ -225,32 +125,32 @@ sx_dec_ovr:     ; 42 clock fatti
 
 
 
-op05:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-                ; 2 clock fatti
+op5:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
+                ; 2 clock cycles used - 54 remaining
 
-                ldi     TMP,FUPMIN                  ;  1   Verifico se aumentare il minuto
+                ldi     TMP,FUPMIN                  ;  1   		Verifico se aumentare il minuto
                 and     TMP,FLAGS                   ;  1
 
-                breq    no_sum_min                  ;  1 2 Se non serve salto
-                ori     FLAGS,FUPD                  ;  1   Faccio aggiornare il display
+                breq    no_sum_min                  ;  1 2 		Se non serve salto
+                ori     FLAGS,FUPD                  ;  1   		Faccio aggiornare il display
 
-                andi    FLAGS,~FUPMIN               ;  1   Resetto il segnale
-                inc     MIN_U                       ;  1   Aumento l'unità del minuto
+                andi    FLAGS,~FUPMIN               ;  1   		Resetto il segnale
+                inc     MIN_U                       ;  1   		Aumento l'unità del minuto
                 ldi     TMP,10                      ;  1
-                cp      MIN_U,TMP                   ;  1   Controllo se rollover
-                brlo    no_inc_mind                 ;  1   2 Se no salto fuori
-                clr     MIN_U                       ;  1     Altrimenti azzero l'unità del minuto
-                inc     MIN_D                       ;  1     Incremento la decina
+                cp      MIN_U,TMP                   ;  1   		Controllo se rollover
+                brlo    no_inc_mind                 ;  1   2 	Se no salto fuori
+                clr     MIN_U                       ;  1     	Altrimenti azzero l'unità del minuto
+                inc     MIN_D                       ;  1     	Incremento la decina
                 ldi     TMP,6                       ;  1
-                cp      MIN_D,TMP                   ;  1     Controllo se rollover
-                brlo    no_inc_houru                ;  1     2 Se no salto fuori
-                clr     MIN_D                       ;  1       Altrimenti azzero la decina del minuto
-                inc     HOUR_U                      ;  1       Aumento l'unità dell'ora
-                ldi     HTMP,2                      ;  1       Controllo se dopo le 20:00
+                cp      MIN_D,TMP                   ;  1     	Controllo se rollover
+                brlo    no_inc_houru                ;  1     2 	Se no salto fuori
+                clr     MIN_D                       ;  1       	Altrimenti azzero la decina del minuto
+                inc     HOUR_U                      ;  1       	Aumento l'unità dell'ora
+                ldi     HTMP,2                      ;  1       	Controllo se dopo le 20:00
                 ldi     TMP,4                       ;  1
                 cpse    HOUR_D,HTMP                 ;  1
                 ldi     TMP,10                      ;  1
-                cp      HOUR_U,TMP                  ;  1       Controllo se rollover
+                cp      HOUR_U,TMP                  ;  1       	Controllo se rollover
                 brlo    no_inc_hourd                ;  1       2 Se no salto fuori
                 clr     HOUR_U                      ;  1         Azzero l'unità dell'ora
                 inc     HOUR_D                      ;  1         Aumento la decina dell'ora
@@ -272,36 +172,35 @@ min_inc_over:
 
 
 
-op06:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-                UP_DATA 06                          ; 12   Aggiorno i piedini di output
+op6:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
+                UP_DATA 6                           ; 12   		Set serial data output bits
+				;14 clock cycles used - 42 remaining
 
-                ;14 clock fatti
-
-                clr     TMP                         ;  1   Incremento il numero di cicli trascorsi
+                clr     TMP                         ;  1   		Incremento il numero di cicli trascorsi
                 ser     HTMP                        ;  1
                 sec                                 ;  1
                 adc     RELAP,TMP                   ;  1
                 adc     HRELAP,TMP                  ;  1
 
-                brcc    rec_not_of                  ;  1 2 Se overflow resetto a $FFFF
+                brcc    rec_not_of                  ;  1 2 		Se overflow resetto a $FFFF
                 mov     RELAP,HTMP                  ;  1
                 mov     HRELAP,HTMP                 ;  1
                 rjmp    PC+4                        ;  2
 rec_not_of:     nop                                 ;    1
                 nop                                 ;    1
                 nop                                 ;    1
-                in      TMP,PIND                    ;  1   Leggo la porta D
-                andi    TMP,FRLST                   ;  1   Azzero i bit non pertinenti
-                mov     HTMP,FLAGS                  ;  1   Verifico se lo stato è cambiato
+                in      TMP,PIND                    ;  1   		Leggo la porta D
+                andi    TMP,FRLST                   ;  1   		Azzero i bit non pertinenti
+                mov     HTMP,FLAGS                  ;  1   		Verifico se lo stato è cambiato
                 andi    HTMP,FRLST                  ;  1
                 eor     HTMP,TMP                    ;  1
-                breq    rec_same                    ;  1   2 Se non è cambiato salto fuori
+                breq    rec_same                    ;  1   2 	Se non è cambiato salto fuori
 
-                andi    FLAGS,~FRLST                ;  1   Aggiorno il bit nelle FLAGS
-                ori     TMP,FREC                    ;  1   E segnalo la ricezione
+                andi    FLAGS,~FRLST                ;  1   		Aggiorno il bit nelle FLAGS
+                ori     TMP,FREC                    ;  1   		E segnalo la ricezione
                 or      FLAGS,TMP                   ;  1
 
-                rjmp    rec_out                     ;  2   Termino
+                rjmp    rec_out                     ;  2   		Termino
 
 rec_same:       nop                                 ;      1
                 nop                                 ;      1
@@ -313,33 +212,34 @@ rec_out:        WASTE   21                          ; 21
 
 
 
-op07:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+op7:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
+				; 2 clock cycles used - 54 remaining
 
-                ldi     TMP,FREC                    ;  1   Controllo se c'è stata una ricezione
+                ldi     TMP,FREC                    ;  1   		Controllo se c'è stata una ricezione
                 and     TMP,FLAGS                   ;  1
-                breq    dec_nothing                 ;  1 2 Se non ho ricevuto nulla salto fuori
+                breq    dec_nothing                 ;  1 2 		Se non ho ricevuto nulla salto fuori
 
-                andi    FLAGS,~FREC                 ;  1   Azzero il segnale
+                andi    FLAGS,~FREC                 ;  1   		Azzero il segnale
                 ldi     TMP,FRLST                   ;  1
-                and     TMP,FLAGS                   ;  1   Controllo che bit ho ricevuto
-                brne    zero_rec                    ;  1   2 Se è un uno, significa che il segnale da gestire è uno zero
+                and     TMP,FLAGS                   ;  1   		Controllo che bit ho ricevuto
+                brne    zero_rec                    ;  1   2 	Se è un uno, significa che il segnale da gestire è uno zero
                 nop                                 ;  1
 
-                ldi     TMP,LOW(UNO2LOW)            ;  1     Controllo se la durata è troppo bassa
+                ldi     TMP,LOW(UNO2LOW)            ;  1     	Controllo se la durata è troppo bassa
                 ldi     HTMP,HIGH(UNO2LOW)          ;  1
                 cp      HRELAP,HTMP                 ;  1
                 brne    PC+2                        ;  1
                 cp      RELAP,TMP                   ;  1
                 brlo    errore_basso                ;  1     2
 
-                ldi     TMP,LOW(UNOTX0)             ;  1     Controllo se si tratta di uno zero
+                ldi     TMP,LOW(UNOTX0)             ;  1     	Controllo se si tratta di uno zero
                 ldi     HTMP,HIGH(UNOTX0)           ;  1
                 cp      HRELAP,HTMP                 ;  1
                 brne    PC+2                        ;  1
                 cp      RELAP,TMP                   ;  1
                 brlo    dec_tx0                     ;  1            2
 
-                ldi     TMP,LOW(UNOTX1)             ;  1     Controllo se si tratta di un uno
+                ldi     TMP,LOW(UNOTX1)             ;  1     	Controllo se si tratta di un uno
                 ldi     HTMP,HIGH(UNOTX1)           ;  1
                 cp      HRELAP,HTMP                 ;  1
                 brne    PC+2                        ;  1
@@ -348,21 +248,21 @@ op07:           sbi     PIND,CLK                    ;  2   Toggle del bit di clo
 
                 rjmp    errore_alto                 ;  2
 
-zero_rec:       ldi     TMP,LOW(ZRO2LOW)            ;      1     Controllo se la durata è troppo bassa
+zero_rec:       ldi     TMP,LOW(ZRO2LOW)            ;      1    Controllo se la durata è troppo bassa
                 ldi     HTMP,HIGH(ZRO2LOW)          ;      1
                 cp      HRELAP,HTMP                 ;      1
                 brne    PC+2                        ;      1
                 cp      RELAP,TMP                   ;      1
                 brlo    errore_basso                ;      1    2
 
-                ldi     TMP,LOW(ZROSEC)             ;      1     Controllo se si tratta di un secondo
+                ldi     TMP,LOW(ZROSEC)             ;      1    Controllo se si tratta di un secondo
                 ldi     HTMP,HIGH(ZROSEC)           ;      1
                 cp      HRELAP,HTMP                 ;      1
                 brne    PC+2                        ;      1
                 cp      RELAP,TMP                   ;      1
                 brlo    dec_txS                     ;      1            2
 
-                ldi     TMP,LOW(ZROMIN)             ;      1     Controllo se si tratta di un minuto
+                ldi     TMP,LOW(ZROMIN)             ;      1    Controllo se si tratta di un minuto
                 ldi     HTMP,HIGH(ZROMIN)           ;      1
                 cp      HRELAP,HTMP                 ;      1
                 brne    PC+2                        ;      1
@@ -435,10 +335,9 @@ dec_out_1:
 
 
 
-op08:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-                UP_DATA 08                          ; 12   Aggiorno i piedini di output
-
-                ;14 clock fatti
+op8:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
+                UP_DATA 8                           ; 12   		Set serial data output bits
+				;14 clock cycles used - 42 remaining
 
                 ldi     TMP,FMIN                    ;  1
                 and     TMP,FLAGS                   ;  1
@@ -470,7 +369,7 @@ non_min:
                 WASTE   12
                 rjmp    min_out
 
-min_ex:         clr     HTMP                        ;  1    Pulisco la SRAM
+min_ex:         clr     HTMP                        ;  1    	Pulisco la SRAM
                 ldi     YL,LOW(num_of_sec)          ;  1
                 st      Y+,HTMP                     ;  2
                 st      Y+,HTMP                     ;  2
@@ -484,21 +383,23 @@ min_out:        WASTE   26
 
 
 
-op09:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
+op9:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
+				; 2 clock cycles used - 54 remaining
+
 
                 ldi     TMP,FTX                     ;  1
-                and     TMP,FLAGS                   ;  1   Controllo se ho ricevuto qualcosa
-                breq    sec_nul                     ;  1 2 Se no salto fuori (6)
+                and     TMP,FLAGS                   ;  1   		Controllo se ho ricevuto qualcosa
+                breq    sec_nul                     ;  1 2 		Se no salto fuori (6)
                 com     TMP                         ;  1
-                and     FLAGS,TMP                   ;  1   Resetto la flag di ricezione
+                and     FLAGS,TMP                   ;  1   		Resetto la flag di ricezione
                 ldi     TMP,FRBIT                   ;  1
-                and     TMP,FLAGS                   ;  1   Metto in TMP il bit attuale
+                and     TMP,FLAGS                   ;  1   		Metto in TMP il bit attuale
                 ldi     YL,LOW(num_of_sec)          ;  1
-                ld      HTMP,Y                      ;  2   Leggo il numero del secondo
+                ld      HTMP,Y                      ;  2   		Leggo il numero del secondo
 
                 ;00 - sempre 0
                 cpi     HTMP,0                      ;  1
-                breq    sec_00                      ;  1   2 Se è il primo secondo elaboro di conseguenza (15)
+                breq    sec_00                      ;  1   2 	Se è il primo secondo elaboro di conseguenza (15)
 
                 ;01/15 - ignoro
                 ;16 - cambio ora
@@ -550,7 +451,7 @@ op09:           sbi     PIND,CLK                    ;  2   Toggle del bit di clo
 
 sec_nul:        ;nul   - no ricezione ( 6)
                 WASTE   48                          ;   48
-                rjmp    op10                        ;    2
+                rjmp    opA                         ;    2
 
 sec_00:         ;00    - sempre 0     (15)
                 tst     TMP                         ;      2
@@ -563,11 +464,11 @@ sec_00:         ;00    - sempre 0     (15)
                 nop                                 ;       -1
                 nop                                 ;       -1
                 WASTE   31                          ;     31
-                rjmp    op10                        ;      2
+                rjmp    opA                         ;      2
 
 sec_01_15:      ;01/15 - ignoro       (17)
                 WASTE   37                          ;       37
-                rjmp    op10                        ;        2
+                rjmp    opA                         ;        2
 
 sec_16:         ;16    - cambio ora   (18)
 sec_17:         ;17    - CEST         (20)
@@ -575,7 +476,7 @@ sec_18:         ;18    - CET          (22)
 sec_19:         ;19    - leap second  (24)
 sec_20:         ;20    - sempre 1     (26)
                 WASTE   30
-                rjmp    op10
+                rjmp    opA
 sec_21_24:      rjmp    sec_21_24_r
 sec_25_27:      rjmp    sec_25_27_r
 sec_28:         rjmp    sec_28_r
@@ -586,7 +487,7 @@ sec_36_58:      ;36-58 - ignoro       (38)
 sec_59:         ;59    - 0 se esiste  (39)
 sec_err:        ;err   - errore       (40)
                 WASTE   14
-                rjmp    op10
+                rjmp    opA
 
 sec_21_24_r:    ;21/24 - min_u        (28)
                 ldi     YL,LOW(rminu)               ;                    1
@@ -604,7 +505,7 @@ sec_21_24_r:    ;21/24 - min_u        (28)
                 eor     HTMP,TMP                    ;                    1 Lo aggiorno
                 st      Y,HTMP                      ;                    2 Salvo il nuovo valore
                 WASTE   8                           ;                    8
-                rjmp    op10                        ;                    2
+                rjmp    opA                         ;                    2
 
 sec_25_27_r:    ;25/27 - min_d        (32)
                 ldi     YL,LOW(rmind)               ;                      1
@@ -625,10 +526,10 @@ sec_25_27_r:    ;25/27 - min_d        (32)
                 nop                                 ;                      1
                 nop                                 ;                      1
                 nop                                 ;                      1
-                rjmp    op10                        ;                      2
+                rjmp    opA                         ;                      2
 
 sec_28_r:       ;28    - min_parity (33)
-                rjmp    op10
+                rjmp    opA
 sec_29_32_r:      ;29/32 - hour_u       (35)
                 ldi     YL,LOW(rhourru)             ;                      1
                 ld      HTMP,Y                      ;                      2 Leggo dalla memoria l'attuale valore dell'unità dei minuti
@@ -645,7 +546,7 @@ sec_29_32_r:      ;29/32 - hour_u       (35)
                 eor     HTMP,TMP                    ;                      1 Lo aggiorno
                 st      Y,HTMP                      ;                      2 Salvo il nuovo valore
                 nop                                 ;                      1
-                rjmp    op10                        ;                      2
+                rjmp    opA                         ;                      2
 
 sec_33_34_r:      ;33/34 - hour_d       (37)
                 ldi     YL,LOW(rhourrd)             ;                      1
@@ -661,138 +562,68 @@ sec_33_34_r:      ;33/34 - hour_d       (37)
                 eor     HTMP,TMP                    ;                      1 Lo aggiorno
                 st      Y,HTMP                      ;                      2 Salvo il nuovo valore
                 nop                                 ;                      1
-                rjmp    op10                        ;                      2
+                rjmp    opA                         ;                      2
 
 
-op10:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-                UP_DATA 10                          ; 12   Aggiorno i piedini di output
 
-                ;14 clock fatti
+opA:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
+                UP_DATA A                           ; 12   		Set serial data output bits
+				;14 clock cycles used - 42 remaining
 
                 WASTE   42
-                ;   42 disponibili
+                ;   42 available
 
-
-
-op11:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-
-                ; 2 clock fatti
-
+opB:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
+				; 2 clock cycles used - 54 remaining
                 WASTE   54
-                ;   54 disponibili
+                ;   54 available
 
-
-
-op12:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-                UP_DATA 12                          ; 12   Aggiorno i piedini di output
-
-                ;14 clock fatti
-
+opC:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
+                UP_DATA C                           ; 12   		Set serial data output bits
+				;14 clock cycles used - 42 remaining
                 WASTE   42
-                ;   42 disponibili
+                ;   42 available
 
-
-
-op13:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-
-                ; 2 clock fatti
-
+opD:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
+				; 2 clock cycles used - 54 remaining
                 WASTE   54
-                ;   54 disponibili
+                ;   54 available
 
-
-
-op14:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-                UP_DATA 14                          ; 12   Aggiorno i piedini di output
-
-                ;14 clock fatti
-
+opE:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
+                UP_DATA E                           ; 12   		Set serial data output bits
+				;14 clock cycles used - 42 remaining
                 WASTE   42
-                ;   42 disponibili
+                ;   42 available
 
-
-
-op15:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-                cbi     PORTD,LTC                   ;  2   Abbasso il latch
-
-                lsl     CNT_MSK                     ;  1      Shifto a SX la mashera delle X
-                brne    n_msk_ptr_rel               ;  2 1    Se non è zero salto la ricarica dei valori
-                ldi     CNT_MSK,1                   ;    1    Carico a 1 il contatore delle X
-                ldi     XL,LOW(mask)                ;    1    Carico il puntatore alla maschera
-                rjmp    msk_ptr_read                ;    2    Salto alla lettura dei puntatori
-
-n_msk_ptr_rel:  nop                                 ;  1      Sincronizzo
+opF:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
+                cbi     PORTD,LTC                   ;  2   		Clear serial latch output
+                lsl     CNT_MSK                     ;  1      	Shift left current figure selector (used to load the X data - or
+													;			anode selection - register)
+                brne    opF_sync               		;  2 1    	If not zero jump to sync then X/Y data loading
+                ldi     CNT_MSK,1                   ;    1    	Otherwise enable the first bit
+                ldi     XL,LOW(mask)                ;    1    	Set the X pointer to the first figure in SRAM
+                rjmp    opF_load                	;    2    	Then jump to X/Y data loading
+opF_sync:  		nop                                 ;  1      	Sync
                 nop                                 ;  1
                 nop                                 ;  1
-
-msk_ptr_read:   mov     XDT_MSK,CNT_MSK             ;  1      Metto la nuova maschera X pari al contatore
-                ld      YDT_MSK,X+                  ;  2      Leggo dalla SRAM la nuova maschera Y
-
-                ;13 clock fatti
-
+opF_load:  	 	mov     XDT_MSK,CNT_MSK             ;  1 1		Load the new X value
+                ld      YDT_MSK,X+                  ;  2 2     	Load the new Y value from the SRAM location pointed by X
+													;			then increment X to point to the next figure
+				;13 clock cycles used - 43 remaining
                 WASTE   43
-                ;   43 disponibili
+                ;   43 available
 
 
 
-op00:           sbi     PIND,CLK                    ;  2   Toggle del bit di clock
-                sbi     PIND,LTC                    ;  2   Toggle del bit di latch
-                UP_DATA 00                          ; 12
+op0:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
+                sbi     PIND,LTC                    ;  2   		Toggle serial latch output (goes high - serial register copied in output register)
+                UP_DATA 0                           ; 12   		Set serial data output bits
+				;16 clock cycles used before / 4 clock cycles used after - 36 remaining
+				.include "src/op0.avr"
 
-                sbiw    SEC_L,1                     ;  2      Decremento il contatore secondi
-                brne    skip_sec_rel                ;  2 1    Se non azzerato vado avanti
-
-                ldi     SEC_H,HIGH(SECLOOP)         ;    1    Ricarico il contatore secondi
-                ldi     SEC_L,LOW(SECLOOP)          ;    1
-                ldi     TMP,3                       ;    1
-                and     TMP,PERIOD                  ;    1    Se ho finito il secondo 0 o 4, ricarico uno in più
-                brne    PC+2                        ;    1
-                inc     SEC_L                       ;    1
-
-                inc     PERIOD                      ;    1    Incremento il contatore del periodo
-                cpi     PERIOD,7                    ;    1
-                brlo    PC+2                        ;    1
-                clr     PERIOD                      ;    1
-
-on_sec_op:      ;26
-                ldi     TMP,HLTC                    ;    1 1  Toggle della maschera del latch
-                eor     HFLAGS,TMP                  ;    1 1
-
-                inc     SECOND                      ;    1 1  Aumento i secondi
-                ldi     TMP,60                      ;    1 1  Metto in TMP il numero di secondi del minuto
-                ldi     HTMP,FLPSEC                 ;    1 1
-                and     HTMP,FLAGS                  ;    1 1
-                lsr     HTMP                        ;    1 1
-                lsr     HTMP                        ;    1 1
-                add     TMP,HTMP                    ;    1 1  Aggiungo un secondo nel caso di leap second
-                cp      SECOND,TMP                  ;    1 1
-                brlo    no_min_rel                  ;    1 1 2 Vedo se sono ad un minuto
-                ori     FLAGS,FUPMIN                ;    1 1  Segnalo di aumentare il minuto
-                clr     SECOND                      ;    1 1  Azzero i secondi
-
-                nop
-                nop
-                nop
-                nop
-                rjmp    repeat
-
-                rjmp    non_sec_rel                 ;    2 2
-
-no_min_rel:     nop                                 ;        1
-                rjmp    non_sec_rel                 ;        2
-
-skip_sec_rel:   ;20
-                WASTE   25                          ; 21      Spreco 21 cicli
-
-non_sec_rel:    ;44
-
-                WASTE    7
-                ;ora come ora è possibile inserire 9 istr. qui
-                ;Dividere ricarica secondi dal resto guadagnando qualche istruzione/loop ?
-
-repeat:
-         		cbi     PORTD,RDY                   ;  2      Attivo l'output dei chip
-                rjmp    main_loop                   ;  2      Riparto da capo
+         		cbi     PORTD,RDY                   ;  2	  	Enable serial shift register chips output
+                rjmp    main_loop                   ;  2      	Loop back
+maindone:
 
                 ;Data to be loaded in SRAM at startup
 				.include "src/lib/load.avr"

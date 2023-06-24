@@ -1,0 +1,48 @@
+				;14 clock cycles used - 42 remaining
+
+                ldi     TMP,FUPD                    ;  1   		Check if the display must be updated
+                and     TMP,FLAGS                   ;  1
+                breq    non_point_u                 ;  1 2		If not jump over and do something else/waste time
+                andi    FLAGS,~FUPD                 ;  1   		Clear flag as these are the last things to update
+
+                ldi     YL,LOW(ubmp)                ;  1   		Update DX score units place
+                add     YL,DX_U                     ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b00000010             ;  1   		Turn on DX second set if needed
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_dx_u,TMP                  ;  2
+
+                ldi     YL,LOW(vbmp)                ;  1   		Update DX score tens place
+                add     YL,DX_D                     ;  1
+                ld      TMP,Y                       ;  2
+                sts     m_dx_d,TMP                  ;  2
+
+                ldi     YL,LOW(ubmp)                ;  1   		Update SX score units place
+                add     YL,SX_U                     ;  1
+                ld      TMP,Y                       ;  2
+                ldi     HTMP,0b00100000             ;  1   		Turn on SX second set if needed
+                and     HTMP,SETBAT                 ;  1
+                breq    PC+2                        ;  1 2
+                andi    TMP,$7F                     ;  1
+                sts     m_sx_u,TMP                  ;  2
+
+                ldi     YL,LOW(vbmp)                ;  1   		Update SX score tens place
+                add     YL,SX_D                     ;  1
+                ld      TMP,Y                       ;  2
+                sts     m_sx_d,TMP                  ;  2
+
+                rjmp    disp_point_ovr              ;  2
+
+non_point_u:
+
+                WASTE   34
+
+disp_point_ovr:
+                nop									;  1
+                nop									;  1
+                nop									;  1
+                nop									;  1
+
+                ;    4 clock cycles available at the end - 34 partially available

@@ -96,3 +96,43 @@
                 .def	YH	    = r29
                 .def	DXSUB   = r30               ;  Also the Z-pointer lower byte
                 .def	SXSUB   = r31               ;  Also the Z-pointer higher byte
+
+
+                ;SETBAT:
+                ;0000-00xx set DX
+                ;0000-0x00 serve DX
+                ;00xx-0000 set SX
+                ;0x00-0000 serve SX
+
+                ;FLAGS:
+                ;0000-000x update display
+                ;0000-00x0 increment hour
+                ;0000-0x00 leap second minute
+                ;0000-x000 minut start syncing signal received
+
+                ;000x-0000 receiver changed state
+                ;00x0-0000 last received state
+                ;0x00-0000 last bit received from dcf77
+                ;x000-0000 signal a bit reception dcf77
+
+                ;HFLAGS:
+                ;0000-000x latch rest state (used to control clock's ' : ' colon)
+
+                ;t_flags:
+                ;0000-000x dst change warning
+                ;0000-00x0 CEST
+                ;0000-0x00 CET
+                ;0000-x000 leap second warning
+
+                ;000x-0000 minute parity
+                ;00x0-0000 houre parity
+                ;0x00-0000 date parity
+
+
+                ;Pin D0 = Y - DATA
+                ;Pin D1 = X - DATA
+                ;Pin D2 = CLOCK
+                ;Pin D3 = LATCH
+
+                ;Pin D4 = OE - READY
+                ;Pin D5 = DCF77 DATA

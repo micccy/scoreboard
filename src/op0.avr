@@ -1,0 +1,54 @@
+				;16 clock cycles used before / 4 clock cycles used after - 36 remaining
+
+                sbiw    SEC_L,1                     ;  2      	Decremento il contatore secondi
+                brne    skip_sec_rel                ;  2 1    	Se non azzerato vado avanti
+
+                ldi     SEC_H,HIGH(SECLOOP)         ;    1    	Ricarico il contatore secondi
+                ldi     SEC_L,LOW(SECLOOP)          ;    1
+                ldi     TMP,3                       ;    1
+                and     TMP,PERIOD                  ;    1    	Se ho finito il secondo 0 o 4, ricarico uno in più
+                brne    PC+2                        ;    1
+                inc     SEC_L                       ;    1
+
+                inc     PERIOD                      ;    1    	Incremento il contatore del periodo
+                cpi     PERIOD,7                    ;    1
+                brlo    PC+2                        ;    1
+                clr     PERIOD                      ;    1
+
+on_sec_op:      ;26
+                ldi     TMP,HLTC                    ;    1 1  	Toggle della maschera del latch
+                eor     HFLAGS,TMP                  ;    1 1
+
+                inc     SECOND                      ;    1 1  	Aumento i secondi
+                ldi     TMP,60                      ;    1 1  	Metto in TMP il numero di secondi del minuto
+                ldi     HTMP,FLPSEC                 ;    1 1
+                and     HTMP,FLAGS                  ;    1 1
+                lsr     HTMP                        ;    1 1
+                lsr     HTMP                        ;    1 1
+                add     TMP,HTMP                    ;    1 1  	Aggiungo un secondo nel caso di leap second
+                cp      SECOND,TMP                  ;    1 1
+                brlo    no_min_rel                  ;    1 1 2 	Vedo se sono ad un minuto
+                ori     FLAGS,FUPMIN                ;    1 1  	Segnalo di aumentare il minuto
+                clr     SECOND                      ;    1 1  	Azzero i secondi
+
+                nop
+                nop
+                nop
+                nop
+                rjmp    repeat
+
+                rjmp    non_sec_rel                 ;    2 2
+
+no_min_rel:     nop                                 ;        1
+                rjmp    non_sec_rel                 ;        2
+
+skip_sec_rel:   ;20
+                WASTE   25                          ; 25     	Spreco 25 cicli
+
+non_sec_rel:    ;45
+
+                WASTE    7
+                ;ora come ora è possibile inserire 9 istr. qui
+                ;Dividere ricarica secondi dal resto guadagnando qualche istruzione/loop ?
+
+repeat:
