@@ -1,0 +1,31 @@
+                .macro  WASTE                       ;  Min 5 clock cycles (= 1.25 us), max 772 (= 193 us)
+                ldi     TMP,((@0-5)/3)+1            ;  1
+                dec     TMP                         ;  1
+                brne    PC-1                        ;  1 2
+                rjmp    PC+(3-((@0-5)%3))           ;  2
+                nop                                 ;  1
+                nop                                 ;  1
+                .endmacro
+
+                .macro  UP_DATA
+
+                rol     XDT_MSK                     ;  1   Put X data's msb into the Carry flag
+                brcs    x@0c                        ;  1 2 If it's one branch
+                cbi     PORTD,XDT                   ;  2   Otherwise clear output
+                rjmp    x@0_over                    ;  2   Skip over next instruction
+x@0c:           sbi     PORTD,XDT                   ;    2 Set output
+                nop                                 ;    1
+x@0_over:
+
+                rol     YDT_MSK                     ;  1   Put Y data's msb into the Carry flag
+                brcs    y@0c                        ;  1 2 If it's one branch
+                cbi     PORTD,YDT                   ;  2   Otherwise clear output
+                rjmp    y@0_over                    ;  2   Skip over next instruction
+y@0c:           sbi     PORTD,YDT                   ;    2 Set output
+                nop                                 ;    1
+y@0_over:
+
+                ;12 clock used
+
+                .endmacro
+                .listmac

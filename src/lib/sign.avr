@@ -1,0 +1,3 @@
+				.db 	"[ (C) Michele 'Micccy' Giacomone - mictronic5677 scoreboard - %YEAR%-%MONTH%-%DAY% %HOUR%:%MINUTE% ] ",$00	;FLASH Signature
+				.eseg
+				.db 	"[ (C) Michele 'Micccy' Giacomone - mictronic5677 scoreboard - %YEAR%-%MONTH%-%DAY% %HOUR%:%MINUTE% ] ",$00	;EEPROM Signature

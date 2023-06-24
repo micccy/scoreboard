@@ -1,0 +1,131 @@
+                .cseg                               ;Code positioned right after the interrupt vector table
+                .org    ivtdone
+reset:
+				wdr									;Reset watchdog timer if enabled
+
+                ldi     TMP,0b11111111              ;Set PORTB to 1111_1111 (FF)
+                out     PORTB,TMP                   ;(All PORTB pullups enabled)
+
+                ldi     TMP,0b01111111              ;Set PORTB to 0111_1111 (7F)
+                out     PORTC,TMP                   ;(All PORTB pullups enabled, msb unused)
+
+                ldi     TMP,0b11011001              ;Set PORTD to 1101_1001 (D9) (R0 E1 L1 C0 X0 Y1)
+                out     PORTD,TMP                   ;(Lower 5 PORTD pins set to their future output values, bit5 pullup disabled
+			 										;other pullups enabled)
+
+                ldi     TMP,0b00011111              ;Set DDRD to 0001_1111 (1F)
+                out     DDRD,TMP                    ;(Lower 5 PORTD pins set to output)
+
+                ldi     TMP,HIGH(RAMEND)            ;Set stack pointer to end of RAM
+                out     SPH,TMP                     ;
+                ldi     TMP,LOW(RAMEND)             ;
+                out     SPL,TMP                     ;
+
+				in		TMP,MCUSR					;Clear watchdog reset flag if set
+				andi	TMP,~WDRF					;
+				out 	MCUSR,TMP					;
+
+				lds		TMP,WDTCSR					;Enable writes to watchdog control bits
+				ori		TMP,WDCE|WDE				;
+				sts		WDTCSR,TMP					;Now we have 4 clock cycles to change them
+				andi	TMP,WDIF					;Disable watchdog if enabled by software, set prescaler to 2k cycles and
+													;reset interrupt flag if set
+				sts		WDTCSR,TMP					;
+
+				ldi		TMP,ACD						;Disable analog comparator
+				out		ACSR,TMP					;
+
+				lds		TMP,PRR						;Disable clock to unused modules
+				ori		TMP,PRTWI|PRTIM2|PRTIM0|PRTIM1|PRSPI|PRUSART0|PRADC	;
+				sts		PRR,TMP						;
+
+                ldi     XH,HIGH(load_sram)          ;Set a pointer to SRAM destination start
+                ldi     XL,LOW(load_sram)           ;
+                ldi     SXSUB,HIGH(load_flash*2)    ;Set a pointer to FLASH source start
+                ldi     DXSUB,LOW(load_flash*2)     ;Doubled since FLASH is made of 16bit words and not bytes
+                ldi     YH,HIGH(load_flash_end*2)   ;Set a pointer to FLASH source end
+                ldi     YL,LOW(load_flash_end*2)    ;Doubled since FLASH is made of 16 bit words and not bytes
+
+sram_setup:     lpm     TMP,Z+                      ;Read a byte from FLASH, post-increment pointer
+                st      X+,TMP                      ;Write said byte in SRAM, post-increment pointer
+                cp      SXSUB,YH                    ;Keep going
+                brne    sram_setup                  ;
+                cp      DXSUB,YL                    ;
+                brne    sram_setup                  ;until the source ends
+
+                ldi     XH,HIGH(load_sram)          ;Set pointers high byte to start of SRAM loaded data section
+                ldi     YH,HIGH(load_sram)          ;
+
+                ldi     SEC_H,HIGH(SECLOOP)         ;Set real-time second detection data
+                ldi     SEC_L,LOW(SECLOOP)          ;
+                clr     PERIOD                      ;
+
+                clr     CNT_MSK                     ;Clear X loop register
+
+                ser     YDT_MSK                     ;Set every segment off for the first run
+                clr     XDT_MSK                     ;
+
+                clr     MIN_U                       ;Clear time information
+                clr     MIN_D                       ;
+                clr     HOUR_U                      ;
+                clr     HOUR_D                      ;
+                clr     SECOND                      ;
+
+                clr     DX_U                        ;Clear DX (== Right == home) score
+                clr     DX_D                        ;
+                clr     SX_U                        ;Clear SX (== Left == guest) score
+                clr     SX_D                        ;
+                clr     SETBAT                      ;Clear Sets and Serve
+
+                clr     DXADD                       ;Clear score increment/decrement registers
+                clr     SXADD                       ;
+                clr     DXSUB                       ;
+                clr     SXSUB                       ;
+
+                clr     RELAP                       ;Clear reception counter
+                clr     HRELAP                      ;
+
+                ;Pin D0 = Y - DATA
+                ;Pin D1 = X - DATA
+                ;Pin D2 = CLOCK
+                ;Pin D3 = LATCH
+
+                ;Pin D4 = OE - READY
+                ;Pin D5 = DCF77 DATA
+
+                ldi     FLAGS,FUPD		           	;Set clock to update
+                in      TMP,PORTD                   ;
+                andi    TMP,FRLST                   ;
+                or      FLAGS,TMP                   ;Read current reception bit and set flag accordingly
+
+                clr     HFLAGS                      ;Clear high flag
+
+                ;SETBAT:
+                ;0000-00xx set DX
+                ;0000-0x00 serve DX
+                ;00xx-0000 set SX
+                ;0x00-0000 serve SX
+
+                ;FLAGS:
+                ;0000-000x update display
+                ;0000-00x0 increment hour
+                ;0000-0x00 leap second minute
+                ;0000-x000 minut start syncing signal received
+
+                ;000x-0000 receiver changed state
+                ;00x0-0000 last received state
+                ;0x00-0000 last bit received from dcf77
+                ;x000-0000 signal a bit reception dcf77
+
+                ;HFLAGS:
+                ;0000-000x latch rest state (used to control clock's ' : ' colon)
+
+                ;t_flags:
+                ;0000-000x dst change warning
+                ;0000-00x0 CEST
+                ;0000-0x00 CET
+                ;0000-x000 leap second warning
+
+                ;000x-0000 minute parity
+                ;00x0-0000 houre parity
+                ;0x00-0000 date parity

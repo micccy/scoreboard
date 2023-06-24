@@ -1,0 +1,98 @@
+                .equ	PIND    = $09
+                .equ	DDRD	= $0A
+                .equ	PORTD	= $0B
+                .equ	PORTC	= $08
+                .equ	PORTB	= $05
+				.equ	ACSR	= $30
+				.equ 	MCUSR	= $34
+                .equ	SPL	    = $3D
+                .equ	SPH	    = $3E
+
+				.equ 	WDTCSR 	= $60
+				.equ	PRR		= $64
+
+                .equ	RAMEND	= $08FF
+
+                .equ    SECLOOP =  4464
+
+                .equ    UNO2LOW =   316
+                .equ    UNOTX0  =   632
+                .equ    UNOTX1  =  1263
+
+                .equ    ZRO2LOW =  2526
+                .equ    ZROSEC  =  5682
+                .equ    ZROMIN  = 11995
+
+				.equ	WDRF	= 0b00001000
+				.equ	WDCE	= 0b00010000
+				.equ	WDE		= 0b00001000
+				.equ	WDIF	= 0b10000000
+
+				.equ	ACD		= 0b10000000
+
+				.equ	PRADC	= 0b00000001
+				.equ	PRUSART0= 0b00000010
+				.equ	PRSPI	= 0b00000100
+				.equ	PRTIM1	= 0b00001000
+				.equ	PRTIM0	= 0b00100000
+				.equ	PRTIM2	= 0b01000000
+				.equ	PRTWI	= 0b10000000
+
+                .equ    FUPD    = 0b00000001
+                .equ    FUPMIN  = 0b00000010
+                .equ    FLPSEC  = 0b00000100
+                .equ    FMIN    = 0b00001000
+
+                .equ    FREC    = 0b00010000
+                .equ    FRLST   = 0b00100000
+                .equ    FRBIT   = 0b01000000
+                .equ    FTX     = 0b10000000
+
+                .equ    HLTC    = 0b00000001
+
+                .equ    TCHG    = 0b00000001
+                .equ    TCEST   = 0b00000010
+                .equ    TCET    = 0b00000100
+                .equ    TLEAP   = 0b00001000
+
+                .equ    TPARM   = 0b00010000
+                .equ    TPARH   = 0b00100000
+                .equ    TPARD   = 0b01000000
+
+                .equ    RDY     = 4
+                .equ    LTC     = 3
+                .equ    CLK     = 2
+                .equ    XDT     = 1
+                .equ    YDT     = 0
+
+                .def    RELAP   = r2
+                .def    HRELAP  = r3
+                .def    SECOND  = r4
+                .def    DXADD   = r5
+                .def    SXADD   = r6
+                .def    SETBAT  = r7
+                .def    DX_U    = r8
+                .def    DX_D    = r9
+                .def    SX_U    = r10
+                .def    SX_D    = r11
+                .def    MIN_U   = r12
+                .def    MIN_D   = r13
+                .def    HOUR_U  = r14
+                .def    HOUR_D  = r15
+
+                .def    TMP     = r16
+                .def    HTMP    = r17
+                .def    FLAGS   = r18
+                .def    HFLAGS  = r19
+                .def    CNT_MSK = r20
+                .def    XDT_MSK = r21
+                .def    YDT_MSK = r22
+                .def    PERIOD  = r23
+                .def    SEC_L   = r24
+                .def    SEC_H   = r25
+                .def	XL	    = r26
+                .def	XH	    = r27
+                .def	YL	    = r28
+                .def	YH	    = r29
+                .def	DXSUB   = r30               ;  Also the Z-pointer lower byte
+                .def	SXSUB   = r31               ;  Also the Z-pointer higher byte

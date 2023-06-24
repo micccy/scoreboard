@@ -1,0 +1,32 @@
+                .dseg
+                .org    $0100
+                ;SRAM loaded at startup
+load_sram:
+mask:                                               ;Current segment descriptions
+m_dx_u:         .byte    1                          ;
+m_dx_d:         .byte    1                          ;
+m_sx_u:         .byte    1                          ;
+m_sx_d:         .byte    1                          ;
+m_mm_u:         .byte    1                          ;
+m_mm_d:         .byte    1                          ;
+m_hh_u:         .byte    1                          ;
+m_hh_d:         .byte    1                          ;
+ubmp:           .byte   16                          ;Units place source masks array
+dbmp:           .byte   16                          ;Tens place source masks array
+vbmp:           .byte   20                          ;Tens place source masks array, blank for zero, eventual one for hundreds place
+
+num_of_sec:     .byte    1                          ;Seconds elapsed
+rminu:          .byte    1                          ;Received minute's units
+rmind:          .byte    1                          ;Received minute's tens
+rhourru:        .byte    1                          ;Received hour's units
+rhourrd:        .byte    1                          ;Received hour's tens
+rflags:         .byte    1                          ;Flags such as dst, leap seconds, parity...
+
+t_sec:          .byte    1                          ;Current second
+t_min_u:        .byte    1                          ;Current minute's units
+t_min_d:        .byte    1                          ;Current minute's tens
+t_hour_u:       .byte    1                          ;Current hour's units
+t_hour_d:       .byte    1                          ;Current hour's tens
+t_flags:        .byte    1                          ;Flags such as dst, leap seconds, parity...
+
+				;SRAM not loaded at startup

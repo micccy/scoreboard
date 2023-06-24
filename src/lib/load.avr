@@ -1,0 +1,44 @@
+                .org   (PC + ((0 - (PC & $7F)) & $7F))  ;align to the next 256 word boundary
+
+load_flash:
+
+mask_bank:      .db     $FF,$FF,$FF,$FF,$FF,$FF,$FF,$FF
+
+ubmp_bank:      .db     $81,$CF,$92,$86,$CC,$A4,$A0,$8F,$80,$84,$88,$E0,$B1,$C2,$B0,$B8
+;
+;    UBMP:
+;
+;        6
+;    1       5
+;        0
+;    2       4
+;        3
+;
+;    active LOW (0 = ON, 1 = OFF)
+;    (bit 7 set to 1 = OFF)
+;
+
+dbmp_bank:      .db     $81,$F9,$A4,$B0,$D8,$92,$82,$B9,$80,$90,$88,$C2,$87,$E0,$86,$8E
+;
+;    DBMP:
+;
+;        6
+;    5       1
+;        0
+;    4       2
+;        3
+;
+;    active LOW (0 = ON, 1 = OFF)
+;    (bit 7 set to 1 = OFF)
+;
+
+vbmp_bank:      .db     $FF,$F9,$A4,$B0,$D8,$92,$82,$B9,$80,$90,$01,$79,$24,$30,$58,$12,$02,$39,$00,$10
+
+rec_bnk:        .db     $00,$00,$00,$00,$00,$00
+time_bnk:       .db     $00,$00,$00,$00,$00,$00
+
+                ;End of flash section loaded in sram at startup - check size
+load_flash_end:
+                .if     ((load_flash_end - load_flash) > (($100 / 2) - 1))
+                    .warning "More than 127 words (254 bytes) of flash used by data to be loaded in SRAM! "
+                .endif
