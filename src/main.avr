@@ -32,96 +32,16 @@ op2:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
 
 op3:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
                 ; 2 clock cycles used - 54 remaining
-
-                tst     DXADD                       ;  1        Controllo se aumentare il punteggio DX
-                breq    dx_not_add                  ;  1 2      Se non necessario salto oltre
-                dec     DXADD                       ;  1        Abbasso il valore
-                ori     FLAGS,FUPD                  ;  1        Aggiorno il display
-                inc     DX_U                        ;  1        Aumento le unità
-                ldi     TMP,10                      ;  1
-                cp      DX_U,TMP                    ;  1        Controllo se rollover
-                brlo    dx_not_dec                  ;  1   2    Se no salto fuori
-                clr     DX_U                        ;  1        Resetto le unità
-                inc     DX_D                        ;  1        Aumento le decine
-                ldi     TMP,20                      ;  1        Controllo se rollover
-                cp      DX_D,TMP                    ;  1
-                brlo    PC+2                        ;  1     2  Salto l'istruzione successiva
-                clr     DX_D                        ;  1        Altrimenti cancello
-                rjmp    dx_upd_ovr                  ;  2        Salto fuori
-dx_not_add:     WASTE   6                           ;    5
-dx_not_dec:     WASTE   7                           ;    7 7
-dx_upd_ovr:     ; 18 clock fatti
-
-                tst     SXADD                       ;  1        Controllo se aumentare il punteggio SX
-                breq    sx_not_add                  ;  1 2      Se non necessario salto oltre
-                dec     SXADD                       ;  1        Abbasso il valore
-                ori     FLAGS,FUPD                  ;  1        Aggiorno il display
-                inc     SX_U                        ;  1        Aumento le unità
-                ldi     TMP,10                      ;  1
-                cp      SX_U,TMP                    ;  1        Controllo se rollover
-                brlo    sx_not_dec                  ;  1   2    Se no salto fuori
-                clr     SX_U                        ;  1        Resetto le unità
-                inc     SX_D                        ;  1        Aumento le decine
-                ldi     TMP,20                      ;  1        Controllo se rollover
-                cp      SX_D,TMP                    ;  1
-                brlo    PC+2                        ;  1     2  Salto l'istruzione successiva
-                clr     SX_D                        ;  1        Altrimenti cancello
-                rjmp    sx_upd_ovr                  ;  2        Salto fuori
-sx_not_add:     WASTE   6                           ;    5
-sx_not_dec:     WASTE   7                           ;    7 7
-sx_upd_ovr:     ; 34 clock fatti
-
-                WASTE   22
-                ;   22 disponibili
-
-
+				.include "src/op3.avr"
+				;22 clock cycles available at the end
+				;If any number of points must be added to SX/DX score, add one and decrease the number to be added next
 
 op4:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA 4                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
-
-                tst     DXSUB                       ;  1        Controllo se diminuire il punteggio DX
-                breq    dx_not_sub                  ;  1 2      Se non necessario salto oltre
-                inc     DXSUB                       ;  1        Abbasso il valore
-                ori     FLAGS,FUPD                  ;  1        Aggiorno il display
-                dec     DX_U                        ;  1        Abbasso le unità
-                brpl    dx_not_sde                  ;  1   2    Se non rollover salto oltre
-                ldi     TMP,9                       ;  1        Ricarico le unità
-                mov     DX_U,TMP                    ;  1
-                ldi     TMP,19                      ;  1
-                dec     DX_D                        ;  1        Abbasso le decine
-                brpl    PC+2                        ;  1     2  Se non rollover salto il reload
-                mov     DX_D,TMP                    ;  1        Ricarico le decine
-                rjmp    dx_dec_ovr                  ;  2        Salto fuori
-dx_not_sub:     nop                                 ;    1
-                nop                                 ;    1
-                nop                                 ;    1
-                nop                                 ;    1
-dx_not_sde:     WASTE   7                           ;    7 7
-dx_dec_ovr:     ; 28 clock fatti
-
-                tst     SXSUB                       ;  1        Controllo se diminuire il punteggio SX
-                breq    sx_not_sub                  ;  1 2      Se non necessario salto oltre
-                inc     SXSUB                       ;  1        Abbasso il valore
-                ori     FLAGS,FUPD                  ;  1        Aggiorno il display
-                dec     SX_U                        ;  1        Abbasso le unità
-                brpl    sx_not_sde                  ;  1   2    Se non rollover salto oltre
-                ldi     TMP,9                       ;  1        Ricarico le unità
-                mov     SX_U,TMP                    ;  1
-                ldi     TMP,19                      ;  1
-                dec     SX_D                        ;  1        Abbasso le decine
-                brpl    PC+2                        ;  1     2  Se non rollover salto il reload
-                mov     SX_D,TMP                    ;  1        Ricarico le decine
-                rjmp    sx_dec_ovr                  ;  2        Salto fuori
-sx_not_sub:     nop                                 ;    1
-                nop                                 ;    1
-                nop                                 ;    1
-                nop                                 ;    1
-sx_not_sde:     WASTE   7                           ;    7 7
-sx_dec_ovr:     ; 42 clock fatti
-
-                WASTE   14
-                ;   14 disponibili
+				.include "src/op4.avr"
+                ;14 clock cycles available at the end
+				;If any number of points must be subtracted from SX/DX score, subtract one and decrease the number to be subtracted next
 
 
 

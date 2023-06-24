@@ -1,0 +1,44 @@
+				;14 clock cycles used - 42 remaining
+
+                tst     DXSUB                       ;  1        Check if DX score must be decremented
+                breq    op4_dnsub                   ;  1 2      If not jump over and sync
+                inc     DXSUB                       ;  1        Otherwise decrease the decrement register
+                ori     FLAGS,FUPD                  ;  1        Set display to update
+                dec     DX_U                        ;  1        Decrease the DX score units place
+                brpl    op4_dnsdec                  ;  1   2    If it didn't roll over jump over and sync
+                ldi     TMP,9                       ;  1        Otherwise reset units to nine
+                mov     DX_U,TMP                    ;  1
+                ldi     TMP,19                      ;  1
+                dec     DX_D                        ;  1        Decrease the DX score tens place
+                brpl    PC+2                        ;  1     2  If it didn't roll over jump over next instruction
+                mov     DX_D,TMP                    ;  1        Reset units to nineteen
+                rjmp    op4_dover                   ;  2        Jump over syncing delays
+op4_dnsub:      nop                                 ;    1
+                nop                                 ;    1
+                nop                                 ;    1
+                nop                                 ;    1
+op4_dnsdec:     WASTE   7                           ;    7 7
+op4_dover:
+
+                tst     SXSUB                       ;  1        Check if SX score must be decremented
+                breq    op4_snsub                   ;  1 2      If not jump over and sync
+                inc     SXSUB                       ;  1        Otherwise decrease the decrement register
+                ori     FLAGS,FUPD                  ;  1        Set display to update
+                dec     SX_U                        ;  1        Decrease the SX score units place
+                brpl    op4_snsdec                  ;  1   2    If it didn't roll over jump over and sync
+                ldi     TMP,9                       ;  1        Otherwise reset units to nine
+                mov     SX_U,TMP                    ;  1
+                ldi     TMP,19                      ;  1
+                dec     SX_D                        ;  1        Decrease the SX score tens place
+                brpl    PC+2                        ;  1     2  If it didn't roll over jump over next instruction
+                mov     SX_D,TMP                    ;  1        Reset units to nineteen
+                rjmp    op4_sover                   ;  2        Jump over syncing delays
+op4_snsub:      nop                                 ;    1
+                nop                                 ;    1
+                nop                                 ;    1
+                nop                                 ;    1
+op4_snsdec:     WASTE   7                           ;    7 7
+op4_sover:
+                WASTE   14
+
+                ;14 clock cycles available at the end

@@ -45,4 +45,4 @@ op2_dispover:
                 nop									;  1
                 nop									;  1
 
-                ;    4 clock cycles available at the end - 34 partially available
+                ; 4 clock cycles available at the end - 34 partially available
