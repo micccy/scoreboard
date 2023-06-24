@@ -1,9 +1,9 @@
-1:         x <   316 -- E   errore/disturbo
+1:         x <   316 -- E   error/noise
 1:   315 < x <   632 -- 0   tx 0
 1:   631 < x <  1263 -- 1   tx 1
-1:  1262 < x         -- E   errore/disturbo/nessun segnale
+1:  1262 < x         -- E   error/noise/no signal
 
-0:         x <  2526 -- E   errore/disturbo
-0:  2525 < x <  5682 -- S   inizio secondo
-0:  5681 < x < 11995 -- M   inizio minuto
-0: 11994 < x         -- E   errore/disturbo/nessun segnale
+0:         x <  2526 -- E   error/noise
+0:  2525 < x <  5682 -- S   second mark
+0:  5681 < x < 11995 -- M   minute mark
+0: 11994 < x         -- E   error/noise/no signal

@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language SYSTEM "language.dtd">
+
+        <!-- /usr/share/gtksourceview-4/language-specs -->
+        <!-- Written by Il Micccy -->
+
+<language id="avr" name="Assembler (Atmel - AVRASM)" version="2.0" _section="Source">
+
+  <metadata>
+    <property name="globs">*.avr;*.AVR</property>
+    <property name="mimetypes">text/x-avr</property>
+  </metadata>
+
+  <styles>
+    <style id="Comment"           name="Comment"               map-to="def:comment"/>
+    <style id="String"            name="String"                map-to="def:string"/>
+    <style id="Preprocessor"      name="Preprocessor"          map-to="def:preprocessor"/>
+    <style id="Keyword"           name="Keyword"               map-to="def:keyword"/>
+    <style id="Data-Type"         name="Data Type"             map-to="def:type"/>
+    <style id="Escape-Char"       name="Escaped Character"     map-to="def:special-char"/>
+    <style id="Floating-Point"    name="Floating point number" map-to="def:floating-point"/>
+    <style id="Decimal"           name="Decimal number"        map-to="def:decimal"/>
+    <style id="Base-N-Integer"    name="Base-N Integer"        map-to="def:base-n-integer"/>
+  </styles>
+
+  <default-regex-options case-sensitive='false' />
+
+  <definitions>
+
+    <context id="Escape-Char" style-ref="Escape-Char">
+      <match>\\([\\\"\'nrbtfav\?] |[0-7]{1,3} |x[0-9A-Fa-f]+)</match>
+    </context>
+
+	<context id="Line-Comment" style-ref="Comment" end-at-line-end="true">
+		<start>;|//</start>
+	</context>
+
+	<context id="Block-Comment" style-ref="Comment">
+		<start>/\*</start>
+        <end>\*/</end>
+	</context>
+
+	<context id="Directive" style-ref="Keyword">
+		<match>[.][A-Za-z_0-9]*</match>
+	</context>
+
+	<context id="Operators" style-ref="Keyword">
+		<match>[-.,:\+\*\/\(\)\{\}\[]|]</match>
+	</context>
+
+	<context id="Label" style-ref="Preprocessor">
+		<match>^[A-Za-z_][A-Za-z_0-9]*\:</match>
+	</context>
+
+	<context id="String" style-ref="String" end-at-line-end="true">
+		<start>&quot;</start>
+		<end>&quot;</end>
+	</context>
+
+    <context id="Char" style-ref="String" end-at-line-end="true">
+		<start>'</start>
+		<end>'</end>
+	</context>
+
+	<context id="Registers" style-ref="Data-Type">
+		<keyword>r0</keyword>
+		<keyword>r1</keyword>
+		<keyword>r2</keyword>
+		<keyword>r3</keyword>
+		<keyword>r4</keyword>
+		<keyword>r5</keyword>
+		<keyword>r6</keyword>
+		<keyword>r7</keyword>
+		<keyword>r8</keyword>
+		<keyword>r9</keyword>
+		<keyword>r10</keyword>
+		<keyword>r11</keyword>
+		<keyword>r12</keyword>
+		<keyword>r13</keyword>
+		<keyword>r14</keyword>
+		<keyword>r15</keyword>
+
+		<keyword>r16</keyword>
+		<keyword>r17</keyword>
+		<keyword>r18</keyword>
+		<keyword>r19</keyword>
+		<keyword>r20</keyword>
+		<keyword>r21</keyword>
+		<keyword>r22</keyword>
+		<keyword>r23</keyword>
+		<keyword>r24</keyword>
+		<keyword>r25</keyword>
+		<keyword>r26</keyword>
+		<keyword>r27</keyword>
+		<keyword>r28</keyword>
+		<keyword>r29</keyword>
+		<keyword>r30</keyword>
+		<keyword>r31</keyword>
+	</context>
+
+	<context id="Decimal" style-ref="Decimal">
+		<match>\b([0-9][0-9]*|0)([Uu]([Ll]|LL|ll)?|([Ll]|LL|ll)[Uu]?)?\b</match>
+	</context>
+
+	<context id="Floating-Point-Number" style-ref="Floating-Point">
+		<match>\b([0-9]+[Ee][-]?[0-9]+|([0-9]*\.[0-9]+|[0-9]+\.)([Ee][-]?[0-9]+)?)[fFlL]?</match>
+	</context>
+
+	<context id="Hex-Number" style-ref="Base-N-Integer">
+		<match>\b0[xX][0-9a-fA-F]+([Uu]([Ll]|LL|ll)?|([Ll]|LL|ll)[Uu]?)?\b</match>
+	</context>
+
+    <context id="Hex-Number-Alt" style-ref="Base-N-Integer">
+		<match>\B\$[0-9a-fA-F_]*[0-9a-fA-F_]\b</match>
+	</context>
+
+    <context id="Binary-Number" style-ref="Base-N-Integer">
+		<match>\b0[bB][0-1_]+([Uu]([Ll]|LL|ll)?|([Ll]|LL|ll)[Uu]?)?\b</match>
+	</context>
+
+    <!--Main context-->
+    <context id="avr" class="no-spell-check">
+      <include>
+            <context ref="Escape-Char"/>
+            <context ref="Line-Comment"/>
+            <context ref="Block-Comment"/>
+            <context ref="Directive"/>
+            <context ref="Operators"/>
+            <context ref="Label"/>
+            <context ref="String"/>
+            <context ref="Char"/>
+            <context ref="Registers"/>
+            <context ref="Decimal"/>
+            <context ref="Floating-Point-Number"/>
+            <context ref="Hex-Number"/>
+            <context ref="Hex-Number-Alt"/>
+            <context ref="Binary-Number"/>
+      </include>
+    </context>
+
+  </definitions>
+</language>
