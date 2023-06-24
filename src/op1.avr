@@ -10,9 +10,9 @@ op1_tog:        nop                                 ;    1
                 nop                                 ;    1
 op1_tend:		wdr									;  1 1 		Reset watchdog timer if enabled
 
-disp_clock:     ldi     TMP,FUPD                    ;  1   		Check if the display must be updated
+op1_disp:     	ldi     TMP,FUPD                    ;  1   		Check if the display must be updated
                 and     TMP,FLAGS                   ;  1
-                breq    non_disp                    ;  1 2		If not jump over and do something else/waste time
+                breq    op1_nodisp                  ;  1 2		If not jump over and do something else/waste time
 
                 ldi     YL,LOW(ubmp)                ;  1   		Update minute units place
                 add     YL,MIN_U                    ;  1
@@ -50,11 +50,10 @@ disp_clock:     ldi     TMP,FUPD                    ;  1   		Check if the displa
                 andi    TMP,$7F                     ;  1
                 sts     m_hh_d,TMP                  ;  2
 
-                rjmp    disp_clock_ovr              ;  2
+                rjmp    op1_disp_ovr              	;  2
 
-non_disp:       WASTE   41
+op1_nodisp:     WASTE   41
 
-disp_clock_ovr:
-				nop									;  1
+op1_disp_ovr:	nop									;  1
 
                 ;    1 clock cycle available at the end - 41 partially available

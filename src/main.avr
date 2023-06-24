@@ -620,7 +620,10 @@ op0:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
                 UP_DATA 0                           ; 12   		Set serial data output bits
 				;16 clock cycles used before / 4 clock cycles used after - 36 remaining
 				.include "src/op0.avr"
-
+                ;   30 clock cycles partially available
+				;Detect and update real-time second passing
+				;Toggle serial latch output rest position each second
+				;Detect real-time minute passing and set relative flag
          		cbi     PORTD,RDY                   ;  2	  	Enable serial shift register chips output
                 rjmp    main_loop                   ;  2      	Loop back
 maindone:

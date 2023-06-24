@@ -2,7 +2,7 @@
 
                 ldi     TMP,FUPD                    ;  1   		Check if the display must be updated
                 and     TMP,FLAGS                   ;  1
-                breq    non_point_u                 ;  1 2		If not jump over and do something else/waste time
+                breq    op2_nodisp                 	;  1 2		If not jump over and do something else/waste time
                 andi    FLAGS,~FUPD                 ;  1   		Clear flag as these are the last things to update
 
                 ldi     YL,LOW(ubmp)                ;  1   		Update DX score units place
@@ -33,13 +33,13 @@
                 ld      TMP,Y                       ;  2
                 sts     m_sx_d,TMP                  ;  2
 
-                rjmp    disp_point_ovr              ;  2
+                rjmp    op2_dispover              	;  2
 
-non_point_u:
+op2_nodisp:
 
                 WASTE   34
 
-disp_point_ovr:
+op2_dispover:
                 nop									;  1
                 nop									;  1
                 nop									;  1
