@@ -17,7 +17,7 @@ main_loop:                                          ;Main loop is made of 16 ope
 
 op1:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
 				; 2 clock cycles used - 54 remaining
-				.include "src/op1.avr"
+				.include "src/op1.avr"				; 53
                 ; 1 clock cycle available at the end - 41 partially available
 				;Set serial latch (also used for the ' : ' colon in the displayed time) as needed
 				;Reset watchdog timer if still enabled (e.g. by fuse bits)
@@ -26,20 +26,20 @@ op1:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
 op2:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA 2                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
-				.include "src/op2.avr"
+				.include "src/op2.avr"				; 38
                 ; 4 clock cycles available at the end - 34 partially available
 				;Update displayed SX/DX scores and second Set indicators if the display update flag is set, then clear it
 
 op3:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
                 ; 2 clock cycles used - 54 remaining
-				.include "src/op3.avr"
+				.include "src/op3.avr"				; 32
 				;22 clock cycles available at the end
 				;If any number of points must be added to SX/DX score, add one and decrease the number to be added next
 
 op4:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA 4                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
-				.include "src/op4.avr"
+				.include "src/op4.avr"				; 28
                 ;14 clock cycles available at the end
 				;If any number of points must be subtracted from SX/DX score, subtract one and decrease the number to be subtracted next
 
@@ -47,89 +47,16 @@ op4:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
 
 op5:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
                 ; 2 clock cycles used - 54 remaining
-
-                ldi     TMP,FUPMIN                  ;  1   		Verifico se aumentare il minuto
-                and     TMP,FLAGS                   ;  1
-
-                breq    no_sum_min                  ;  1 2 		Se non serve salto
-                ori     FLAGS,FUPD                  ;  1   		Faccio aggiornare il display
-
-                andi    FLAGS,~FUPMIN               ;  1   		Resetto il segnale
-                inc     MIN_U                       ;  1   		Aumento l'unità del minuto
-                ldi     TMP,10                      ;  1
-                cp      MIN_U,TMP                   ;  1   		Controllo se rollover
-                brlo    no_inc_mind                 ;  1   2 	Se no salto fuori
-                clr     MIN_U                       ;  1     	Altrimenti azzero l'unità del minuto
-                inc     MIN_D                       ;  1     	Incremento la decina
-                ldi     TMP,6                       ;  1
-                cp      MIN_D,TMP                   ;  1     	Controllo se rollover
-                brlo    no_inc_houru                ;  1     2 	Se no salto fuori
-                clr     MIN_D                       ;  1       	Altrimenti azzero la decina del minuto
-                inc     HOUR_U                      ;  1       	Aumento l'unità dell'ora
-                ldi     HTMP,2                      ;  1       	Controllo se dopo le 20:00
-                ldi     TMP,4                       ;  1
-                cpse    HOUR_D,HTMP                 ;  1
-                ldi     TMP,10                      ;  1
-                cp      HOUR_U,TMP                  ;  1       	Controllo se rollover
-                brlo    no_inc_hourd                ;  1       2 Se no salto fuori
-                clr     HOUR_U                      ;  1         Azzero l'unità dell'ora
-                inc     HOUR_D                      ;  1         Aumento la decina dell'ora
-                ldi     TMP,3                       ;  1
-                cp      HOUR_D,TMP                  ;  1         Controllo se rollover
-                brlo    PC+2                        ;  1         Se no salto la cancellazione
-                clr     HOUR_D                      ;  1         Azzero la decina dell'ora
-                rjmp    min_inc_over                ;  2
-
-no_sum_min:     WASTE    6                          ;    5
-no_inc_mind:    WASTE    5                          ;    5 5
-no_inc_houru:   WASTE    8                          ;    8 8 8
-no_inc_hourd:   WASTE    7                          ;    7 7 7 7
-min_inc_over:
-                ;32 clock fatti
-
-                WASTE   24
-                ;   24 disponibili
-
+				.include "src/op5.avr"				; 30
+				;24 clock cycles available at the end
+				;Check if the current minute has to be increased, then increase it and keep a sane 24 hour format clock
 
 
 op6:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA 6                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
-
-                clr     TMP                         ;  1   		Incremento il numero di cicli trascorsi
-                ser     HTMP                        ;  1
-                sec                                 ;  1
-                adc     RELAP,TMP                   ;  1
-                adc     HRELAP,TMP                  ;  1
-
-                brcc    rec_not_of                  ;  1 2 		Se overflow resetto a $FFFF
-                mov     RELAP,HTMP                  ;  1
-                mov     HRELAP,HTMP                 ;  1
-                rjmp    PC+4                        ;  2
-rec_not_of:     nop                                 ;    1
-                nop                                 ;    1
-                nop                                 ;    1
-                in      TMP,PIND                    ;  1   		Leggo la porta D
-                andi    TMP,FRLST                   ;  1   		Azzero i bit non pertinenti
-                mov     HTMP,FLAGS                  ;  1   		Verifico se lo stato è cambiato
-                andi    HTMP,FRLST                  ;  1
-                eor     HTMP,TMP                    ;  1
-                breq    rec_same                    ;  1   2 	Se non è cambiato salto fuori
-
-                andi    FLAGS,~FRLST                ;  1   		Aggiorno il bit nelle FLAGS
-                ori     TMP,FREC                    ;  1   		E segnalo la ricezione
-                or      FLAGS,TMP                   ;  1
-
-                rjmp    rec_out                     ;  2   		Termino
-
-rec_same:       nop                                 ;      1
-                nop                                 ;      1
-                nop                                 ;      1
-                nop                                 ;      1
-
-rec_out:        WASTE   21                          ; 21
-                ;   21 disponibili
-
+				.include "src/op6.avr"				; 21
+                ;21 clock cycles available at the end
 
 
 op7:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
@@ -539,7 +466,7 @@ op0:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
                 sbi     PIND,LTC                    ;  2   		Toggle serial latch output (goes high - serial register copied in output register)
                 UP_DATA 0                           ; 12   		Set serial data output bits
 				;16 clock cycles used before / 4 clock cycles used after - 36 remaining
-				.include "src/op0.avr"
+				.include "src/op0.avr"				; 36
                 ;   30 clock cycles partially available
 				;Detect and update real-time second passing
 				;Toggle serial latch output rest position each second

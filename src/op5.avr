@@ -1,0 +1,42 @@
+				; 2 clock cycles used - 54 remaining
+
+                ldi     TMP,FUPMIN                  ;  1   		Check if the displayed minute has to be increased
+                and     TMP,FLAGS                   ;  1
+
+                breq    op6_nimin                  	;  1 2 		If not jump over and do something else/waste time
+                ori     FLAGS,FUPD                  ;  1   		Set display to update
+
+                andi    FLAGS,~FUPMIN               ;  1   		Cleare the increase minute flag
+                inc     MIN_U                       ;  1   		Increase minute units place
+                ldi     TMP,10                      ;  1
+                cp      MIN_U,TMP                   ;  1   		Check if less than 10
+                brlo    op6_nimind                 	;  1   2 	If yes jump over
+                clr     MIN_U                       ;  1     	Otherwise set minute units place back to zero
+                inc     MIN_D                       ;  1     	Increase minute tens place
+                ldi     TMP,6                       ;  1
+                cp      MIN_D,TMP                   ;  1     	Check if less than 6
+                brlo    op6_nihouru                	;  1     2 	If yes jump over
+                clr     MIN_D                       ;  1       	Otherwise set minute tens place back to zero
+                inc     HOUR_U                      ;  1       	Increase hour units place
+                ldi     HTMP,2                      ;  1       	Check if we are after 20:00
+                ldi     TMP,4                       ;  1		Load tmp with 4
+                cpse    HOUR_D,HTMP                 ;  1		If after 20:00 skip next instruction
+                ldi     TMP,10                      ;  1		Load tmp with 10
+                cp      HOUR_U,TMP                  ;  1       	Check if current hour units place is less than tmp
+                brlo    op6_nihourd                	;  1       2 If yes jump over
+                clr     HOUR_U                      ;  1         Set hour units place back to zero
+                inc     HOUR_D                      ;  1         Increase hour tens place
+                ldi     TMP,3                       ;  1
+                cp      HOUR_D,TMP                  ;  1         Check if less than 3
+                brlo    PC+2                        ;  1         If yes jump other
+                clr     HOUR_D                      ;  1         Otherwise set hour tens place back to zero
+                rjmp    op6_incover                	;  2
+
+op6_nimin:     	WASTE    6                          ;    5
+op6_nimind:    	WASTE    5                          ;    5 5
+op6_nihouru:   	WASTE    8                          ;    8 8 8
+op6_nihourd:   	WASTE    7                          ;    7 7 7 7
+op6_incover:
+                WASTE   24
+
+                ;24 clock cycles available at the end
