@@ -6,11 +6,11 @@
                 adc     RELAP,TMP                   ;  1
                 adc     HRELAP,TMP                  ;  1
 
-                brcc    rec_not_of                  ;  1 2 		If overflowed reset to $FFFF
+                brcc    op6_nof                  	;  1 2 		If overflowed reset to $FFFF
                 mov     RELAP,HTMP                  ;  1
                 mov     HRELAP,HTMP                 ;  1
                 rjmp    PC+4                        ;  2
-rec_not_of:     nop                                 ;    1
+op6_nof:     	nop                                 ;    1
                 nop                                 ;    1
                 nop                                 ;    1
                 in      TMP,PIND                    ;  1   		Read Port D
@@ -18,19 +18,19 @@ rec_not_of:     nop                                 ;    1
                 mov     HTMP,FLAGS                  ;  1   		Check if the level of the reception input pin has changed
                 andi    HTMP,FRLST                  ;  1
                 eor     HTMP,TMP                    ;  1
-                breq    rec_same                    ;  1   2 	If not jump
+                breq    op6_same                    ;  1   2 	If not jump
 
                 andi    FLAGS,~FRLST                ;  1   		Otherwise update bit status in flags
                 ori     TMP,FREC                    ;  1   		And signal the event
                 or      FLAGS,TMP                   ;  1
 
-                rjmp    rec_out                     ;  2   		Jump out
+                rjmp    op6_over                    ;  2   		Jump out
 
-rec_same:       nop                                 ;      1
+op6_same:       nop                                 ;      1
                 nop                                 ;      1
                 nop                                 ;      1
                 nop                                 ;      1
 
-rec_out:        WASTE   21                          ; 21
+op6_over:       WASTE   21                          ; 21
 
                 ;21 clock cycles available at the end
