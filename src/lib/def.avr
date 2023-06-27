@@ -14,6 +14,7 @@
                 .equ	RAMEND	= $08FF
 
                 .equ    SECLOOP =  4464
+				.equ	BOTLOOP = SECLOOP/4
 
                 .equ    UNO2LOW =   316
                 .equ    UNOTX0  =   632
@@ -49,6 +50,7 @@
                 .equ    FTX     = 0b10000000
 
                 .equ    HLTC    = 0b00000001
+				.equ	HRST	= 0b00000010
 
                 .equ    TCHG    = 0b00000001
                 .equ    TCEST   = 0b00000010
@@ -117,6 +119,7 @@
 
                 ;HFLAGS:
                 ;0000-000x latch rest state (used to control clock's ' : ' colon)
+				;0000-00x0 display startup test sequence
 
                 ;t_flags:
                 ;0000-000x dst change warning

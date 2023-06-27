@@ -62,8 +62,8 @@ sram_setup:     lpm     TMP,Z+                      ;Read a byte from FLASH, pos
 
                 clr     CNT_MSK                     ;Clear X loop register
 
-                ser     YDT_MSK                     ;Set every segment off for the first run
-                clr     XDT_MSK                     ;
+                clr     YDT_MSK                     ;Set every segment on for the first run
+                clr     XDT_MSK                     ;But all figures off
 
                 clr     MIN_U                       ;Clear time information
                 clr     MIN_D                       ;
@@ -90,5 +90,5 @@ sram_setup:     lpm     TMP,Z+                      ;Read a byte from FLASH, pos
                 andi    TMP,FRLST                   ;
                 or      FLAGS,TMP                   ;Read current reception bit and set flag accordingly
 
-                clr     HFLAGS                      ;Clear high flag
+                ldi     HFLAGS,HRST            		;Set latch rest position to on, and the boot test sequence to display
 resetdone:

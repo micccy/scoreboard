@@ -29,4 +29,7 @@ t_hour_u:       .byte    1                          ;Current hour's units
 t_hour_d:       .byte    1                          ;Current hour's tens
 t_flags:        .byte    1                          ;Flags such as dst, leap seconds, parity...
 
+boot_iter:		.byte	 2							;Number of iterations before changing boot time test output
+boot_val:		.byte	 1							;Next Y data output during boot time test
+
 				;SRAM not loaded at startup

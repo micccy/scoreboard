@@ -34,8 +34,11 @@ dbmp_bank:      .db     $81,$F9,$A4,$B0,$D8,$92,$82,$B9,$80,$90,$88,$C2,$87,$E0,
 
 vbmp_bank:      .db     $FF,$F9,$A4,$B0,$D8,$92,$82,$B9,$80,$90,$01,$79,$24,$30,$58,$12,$02,$39,$00,$10
 
-rec_bnk:        .db     $00,$00,$00,$00,$00,$00
-time_bnk:       .db     $00,$00,$00,$00,$00,$00
+rec_bank:       .db     $00,$00,$00,$00,$00,$00		;Set initial values to zero
+time_bank:      .db     $00,$00,$00,$00,$00,$00		;
+
+boot_iter_bank: .dw		BOTLOOP*2+1					;Number of iterations before changing boot time test output
+boot_val_bank:	.db	 	$FF							;Next Y data output during boot time test
 
                 ;End of flash section loaded in sram at startup - check size
 load_flash_end:

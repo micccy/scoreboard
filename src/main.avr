@@ -439,6 +439,7 @@ opD:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
 opE:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA E                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
+
                 WASTE   42
                 ;   42 available
 
@@ -454,12 +455,20 @@ opF_sync:  		nop                                 ;  1      	Sync
                 nop                                 ;  1
                 nop                                 ;  1
 opF_load:  	 	mov     XDT_MSK,CNT_MSK             ;  1 1		Load the new X value
-                ld      YDT_MSK,X+                  ;  2 2     	Load the new Y value from the SRAM location pointed by X
+				mov		TMP,HFLAGS					;  1		Check if the boot test sequence has to be displayed
+				andi	TMP,HRST					;  1
+				brne	opF_noydt					;  1 2		If yes avoid loading Y date since already set properly
+                ld      YDT_MSK,X+                  ;  2      	Load the new Y value from the SRAM location pointed by X
 													;			then increment X to point to the next figure
-				;13 clock cycles used - 43 remaining
-                WASTE   43
-                ;   43 available
-
+				rjmp	opF_over					;  2		Jump over syncing delays
+opF_noydt:		inc		XL							;    1		Keep Y and X syncronised
+				nop									;    1
+				nop									;    1
+opF_over:
+				;18 clock cycles used - 38 remaining
+                .include "src/opF.avr"				; 38
+                ; 0 clock cycles available at the end - 34 partially available
+				;Check if the boot test pattern must be displayed, if yes do it and update status until the end
 
 
 op0:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
