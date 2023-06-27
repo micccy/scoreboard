@@ -17,7 +17,7 @@ main_loop:                                          ;Main loop is made of 16 ope
 
 op1:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
 				; 2 clock cycles used - 54 remaining
-				.include "src/op1.avr"				; 53
+				.include "src/op1_uptimeltc.avr" 	; 53
                 ; 1 clock cycle available at the end - 41 partially available
 				;Set serial latch (also used for the ' : ' colon in the displayed time) as needed
 				;Reset watchdog timer if still enabled (e.g. by fuse bits)
@@ -26,20 +26,20 @@ op1:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
 op2:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA 2                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
-				.include "src/op2.avr"				; 38
+				.include "src/op2_upscore.avr"		; 38
                 ; 4 clock cycles available at the end - 34 partially available
 				;Update displayed SX/DX scores and second Set indicators if the display update flag is set, then clear it
 
 op3:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
                 ; 2 clock cycles used - 54 remaining
-				.include "src/op3.avr"				; 32
+				.include "src/op3_addscore.avr"		; 32
 				;22 clock cycles available at the end
 				;If any number of points must be added to SX/DX score, add one and decrease the number to be added next
 
 op4:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA 4                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
-				.include "src/op4.avr"				; 28
+				.include "src/op4_subscore.avr"		; 28
                 ;14 clock cycles available at the end
 				;If any number of points must be subtracted from SX/DX score, subtract one and decrease the number to be subtracted next
 
@@ -47,7 +47,7 @@ op4:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
 
 op5:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
                 ; 2 clock cycles used - 54 remaining
-				.include "src/op5.avr"				; 30
+				.include "src/op5_addclock.avr"		; 30
 				;24 clock cycles available at the end
 				;Check if the current minute has to be increased, then increase it and keep a sane 24 hour format clock
 
@@ -55,8 +55,9 @@ op5:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
 op6:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA 6                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
-				.include "src/op6.avr"				; 21
+				.include "src/op6_receive.avr"		; 21
                 ;21 clock cycles available at the end
+				;Detect level changes on the DCF77 receiver data input pins, update flags
 
 
 op7:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
@@ -466,7 +467,7 @@ opF_noydt:		inc		XL							;    1		Keep Y and X syncronised
 				nop									;    1
 opF_over:
 				;18 clock cycles used - 38 remaining
-                .include "src/opF.avr"				; 38
+                .include "src/opF_bootest.avr"		; 38
                 ; 0 clock cycles available at the end - 34 partially available
 				;Check if the boot test pattern must be displayed, if yes do it and update status until the end
 
@@ -475,7 +476,7 @@ op0:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
                 sbi     PIND,LTC                    ;  2   		Toggle serial latch output (goes high - serial register copied in output register)
                 UP_DATA 0                           ; 12   		Set serial data output bits
 				;16 clock cycles used before / 4 clock cycles used after - 36 remaining
-				.include "src/op0.avr"				; 36
+				.include "src/op0_seclatch.avr"		; 36
                 ;   30 clock cycles partially available
 				;Detect and update real-time second passing
 				;Toggle serial latch output rest position each second
