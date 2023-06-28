@@ -38,7 +38,7 @@ rec_bank:       .db     $00,$00,$00,$00,$00,$00		;Set initial values to zero
 time_bank:      .db     $00,$00,$00,$00,$00,$00		;
 
 boot_iter_bank: .dw		BOTLOOP*2+1					;Number of iterations before changing boot time test output
-boot_val_bank:	.db	 	$FF							;Next Y data output during boot time test
+boot_val_bank:	.db	 	$FF,$00						;Next Y data output during boot time test
 
                 ;End of flash section loaded in sram at startup - check size
 load_flash_end:

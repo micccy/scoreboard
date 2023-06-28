@@ -31,5 +31,6 @@ t_flags:        .byte    1                          ;Flags such as dst, leap sec
 
 boot_iter:		.byte	 2							;Number of iterations before changing boot time test output
 boot_val:		.byte	 1							;Next Y data output during boot time test
+boot_cur:       .byte    1                          ;Current Y data output during boot time test
 
 				;SRAM not loaded at startup

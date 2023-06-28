@@ -456,19 +456,11 @@ opF_sync:  		nop                                 ;  1      	Sync
                 nop                                 ;  1
                 nop                                 ;  1
 opF_load:  	 	mov     XDT_MSK,CNT_MSK             ;  1 1		Load the new X value
-				mov		TMP,HFLAGS					;  1		Check if the boot test sequence has to be displayed
-				andi	TMP,HRST					;  1
-				brne	opF_noydt					;  1 2		If yes avoid loading Y date since already set properly
                 ld      YDT_MSK,X+                  ;  2      	Load the new Y value from the SRAM location pointed by X
 													;			then increment X to point to the next figure
-				rjmp	opF_over					;  2		Jump over syncing delays
-opF_noydt:		inc		XL							;    1		Keep Y and X syncronised
-				nop									;    1
-				nop									;    1
-opF_over:
-				;18 clock cycles used - 38 remaining
-                .include "src/opF_bootest.avr"		; 38
-                ; 0 clock cycles available at the end - 34 partially available
+				;13 clock cycles used - 43 remaining
+                .include "src/opF_bootest.avr"		; 41
+                ; 2 clock cycles available at the end - 37 partially available
 				;Check if the boot test pattern must be displayed, if yes do it and update status until the end
 
 

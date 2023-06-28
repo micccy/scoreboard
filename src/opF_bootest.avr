@@ -1,4 +1,4 @@
-				;18 clock cycles used - 38 remaining
+				;13 clock cycles used - 43 remaining
 
 				mov		TMP,HFLAGS					;  1		Check if the boot test sequence has to be displayed
 				andi	TMP,HRST					;  1
@@ -15,7 +15,7 @@
 				sts		boot_iter,TMP				;  2		Store it back
 				sts		boot_iter+1,HTMP			;  2
 				lds		TMP,boot_val				;  2		Get current next output value
-				mov		HTMP,YDT_MSK				;  1		Get current output value
+				lds		HTMP,boot_cur				;  2		Get current output value
 				mov		YDT_MSK,TMP					;  1		Update current output value
 				cpi		TMP,$FF						;  1		Check if current next output value is FF (All segments off)
 				brne	opF_noFF					;  1     2	If not keep going
@@ -25,33 +25,26 @@
 				breq	opF_seclast					;  1         2	If yes just keep going
 				clc									;  1			Otherwise this was the first frame, clear carry to set FE as next value
 				rjmp	opF_fframe					;  2
-
 opF_noFF:		nop									;        1
 				nop									;        1
 				nop									;        1
 				nop									;        1
-				nop									;        1
-
 opF_seclast:	nop									;        1   1
 				sec									;        1   1	Set carry
 opF_fframe:		rol		TMP							;  1	 1   1	Calculate next next output value (rotate left through carry)
 				sts		boot_val,TMP				;  2	 2	 2 	Save it as next value
+                sts     boot_cur,YDT_MSK            ;  2     2   2
 				rjmp 	opF_done					;  2     2   2  Jump over
-
 opF_disboot:	andi	HFLAGS,~HRST				;          1	Finished, clear boot test sequence flag
 				ori		HFLAGS,HLTC					;          1	Set latch off after this
-				nop									;          1
-				nop									;          1
-				nop									;          1
-				nop									;          1
-				nop									;          1
+				WASTE  7							;          7
 				rjmp	opF_done					;          2
-
-
-opF_nouflow:	WASTE 20							;     20
+opF_nouflow:	WASTE 21							;     21
 				andi	HFLAGS,~HLTC				;      1		Set latch rest position on the whole time
+				lds		YDT_MSK,boot_cur			;      2		Get current next output value
 				rjmp	opF_done					;      2
-opF_noboot:		WASTE 34							;   34
-opF_done:
+opF_noboot:		WASTE 37							;   37
+opF_done:		nop									;  1 1 1 1 1 1
+				nop									;  1 1 1 1 1 1
 
-                ; 0 clock cycles available at the end - 34 partially available
+                ; 2 clock cycles available at the end - 37 partially available
