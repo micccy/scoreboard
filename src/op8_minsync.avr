@@ -1,0 +1,46 @@
+				;14 clock cycles used - 42 remaining
+
+                ldi     TMP,FMIN                    ;  1		Check if a minute mark has been received
+                and     TMP,FLAGS                   ;  1
+                breq    non_min                     ;  1 2		If not jump over and do something else/waste time (sync)
+
+                andi    FLAGS,~FMIN                 ;  1		Otherwise clear the flag
+                ldi     YL,LOW(num_of_sec)          ;  1
+                ld      TMP,Y+                      ;  2		Get the receiver seconds number
+
+                cpi     TMP,58                      ;  1		Check if it's 58 (received seconds 0-58 and then the minute mark on 59)
+                brne    min_err                     ;  1   2	If not this was a bogus minute mark, jump over
+
+                inc     DXADD                       ;  1		DEBUG increase right score
+
+                ld      MIN_U,Y+					;  2		Load displayed time with received values in sram
+                ld      MIN_D,Y+					;  2
+                ld      HOUR_U,Y+					;  2
+                ld      HOUR_D,Y+					;  2
+                clr     SECOND						;  1		Clear current second
+                clr     PERIOD						;  1		Reset main loop real time detection counters
+                ldi     SEC_H,HIGH(SECLOOP)			;  1
+                ldi     SEC_L,LOW(SECLOOP)			;  1
+                nop                                 ;  1
+                rjmp    min_ex                      ;  2		Jump to sram clearing
+
+min_err:        ;inc     DXADD                       ;      1	 DEBUG increase right score
+				WASTE   13							;     13	Sync
+                rjmp    min_ex                      ;      2
+non_min:
+                WASTE   33							;   33		Sync
+                rjmp    min_out						;    2
+
+min_ex:         clr     HTMP                        ;  1    	Clear received values in sram
+                ldi     YL,LOW(num_of_sec)          ;  1
+                st      Y+,HTMP                     ;  2
+                st      Y+,HTMP                     ;  2
+                st      Y+,HTMP                     ;  2
+                st      Y+,HTMP                     ;  2
+                st      Y+,HTMP                     ;  2
+                st      Y+,HTMP                     ;  2
+
+min_out:        nop
+				nop
+				nop
+                ; 3 clock cycles available - 33 partially available

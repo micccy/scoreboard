@@ -1,0 +1,92 @@
+				;14 clock cycles used - 42 remaining
+
+                ldi     TMP,FREC                    ;  1   		Check if something has been received
+                and     TMP,FLAGS                   ;  1
+                breq    op6_nodec                 	;  1 2 		If not jump over and do something else/waste time (sync)
+                andi    FLAGS,~FREC                 ;  1   		Clear reception flag
+                ldi     TMP,FRLST                   ;  1
+                and     TMP,FLAGS                   ;  1   		Get the current bit
+                brne    op6_reczero                 ;  1   2 	If one, then we have to decode a zero (the status that has just ended)
+                nop                                 ;  1		Otherwise we have to decode a one (--> suppressed DCF77 carrier)
+                ldi     TMP,LOW(UNO2LOW)            ;  1     	Check if received a one for an insufficient amount of time
+                ldi     HTMP,HIGH(UNO2LOW)          ;  1
+                cp      HRELAP,HTMP                 ;  1
+                brne    PC+2                        ;  1
+                cp      RELAP,TMP                   ;  1
+                brlo    op6_toofast                 ;  1     2	If yes jump to the too fast handler
+                ldi     TMP,LOW(UNOTX0)             ;  1     	Check if we received a zero
+                ldi     HTMP,HIGH(UNOTX0)           ;  1
+                cp      HRELAP,HTMP                 ;  1
+                brne    PC+2                        ;  1
+                cp      RELAP,TMP                   ;  1
+                brlo    op6_rec0                    ;  1            2	If yes jump to the zero handler
+                ldi     TMP,LOW(UNOTX1)             ;  1     	Check if we received a one
+                ldi     HTMP,HIGH(UNOTX1)           ;  1
+                cp      HRELAP,HTMP                 ;  1
+                brne    PC+2                        ;  1
+                cp      RELAP,TMP                   ;  1
+                brlo    op6_rec1                    ;  1              2	If yes jump to the one handler
+                rjmp    op6_tooslow                 ;  2		Otherwise jump to the too slow handler
+op6_reczero:       ldi     TMP,LOW(ZRO2LOW)         ;      1    Check if we received a zero for an insufficient amount of time
+                ldi     HTMP,HIGH(ZRO2LOW)          ;      1
+                cp      HRELAP,HTMP                 ;      1
+                brne    PC+2                        ;      1
+                cp      RELAP,TMP                   ;      1
+                brlo    op6_toofast                 ;      1    2	If yes jump to the too fast handler
+                ldi     TMP,LOW(ZROSEC)             ;      1    Check if this is the exact start of a second
+                ldi     HTMP,HIGH(ZROSEC)           ;      1
+                cp      HRELAP,HTMP                 ;      1
+                brne    PC+2                        ;      1
+                cp      RELAP,TMP                   ;      1
+                brlo    op6_recS                    ;      1            2	If yes jump to the second handler
+                ldi     TMP,LOW(ZROMIN)             ;      1    Check if this is the exact start of a minute
+                ldi     HTMP,HIGH(ZROMIN)           ;      1
+                cp      HRELAP,HTMP                 ;      1
+                brne    PC+2                        ;      1
+                cp      RELAP,TMP                   ;      1
+                brlo    op6_recM                    ;      1      2	If yes jump to the minute handler
+                rjmp    op6_tooslow                 ;      2	Otherwise jump to the too slow handler
+op6_toofast:   	WASTE   13                          ;       13 13 	Sync
+op6_tooslow:    ldi     YL,LOW(num_of_sec)          ;  1   1 1  1
+                ldi     TMP,$80                     ;  1   1 1  1 	Signal an error by setting an illegal receiver seconds value
+                st      Y,TMP                       ;  2   2 2  2
+                rjmp    op6_decover                 ;  2   2 2  2
+op6_nodec:    	WASTE   30                          ;   30		Sync
+                rjmp    op6_done                    ;    2
+op6_rec0:       andi    FLAGS,~FRBIT                ;               1	Set last received bit to zero
+                nop                                 ;               1	Sync
+                nop                                 ;               1
+                nop                                 ;               1
+                nop                                 ;               1
+                rjmp    PC+2                        ;               2	Jump over next instruction
+op6_rec1:       ori     FLAGS,FRBIT                 ;               1	Set last received bit to one
+                ori     FLAGS,FTX                   ;               1 1
+                nop                                 ;               1 1
+                nop                                 ;               1 1
+                nop                                 ;               1 1
+                rjmp    op6_decover                 ;               2 2	Jump to decoding end
+op6_recS:       ldi     YL,LOW(num_of_sec)          ;                   1 Read from sram receiver seconds value
+                ld      TMP,Y                       ;                   2
+                cpi     TMP,60                      ;                   1 Check if too high
+                brsh    PC+2                        ;                   1 If yes jump over next instruction
+                inc     TMP                         ;                   1 Otherwise increase it
+                st      Y,TMP                       ;                   2 Write it back in sram
+                rjmp    PC+5                        ;                   2 Jump after minute flag is set to sync and continue
+op6_recM:       nop                                 ;             1	Sync
+                nop                                 ;             1
+                nop                                 ;             1
+                ori     FLAGS,FMIN                  ;             1	Set minute sync flag
+                nop                                 ;             1     1
+                rjmp    op6_decover                 ;             2     2
+op6_decover:    clr     RELAP                       ;  1   1 1  1 1 1 1 1	Reset main loop counter word
+                clr     HRELAP                      ;  1   1 1  1 1 1 1 1
+
+                clr     SX_U						;DEBUG - TODO - output stuff as score
+                clr     SX_D
+                ldi     YL,LOW(num_of_sec)
+                ld      TMP,Y
+                mov     SXADD,TMP
+
+op6_done:		WASTE 6
+
+				; 6 Clock available at the end - 30 partially available

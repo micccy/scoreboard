@@ -1,16 +1,15 @@
-				;14 clock cycles used - 42 remaining
+				;34 clock cycles used - 22 remaining
 
                 clr     TMP                         ;  1   		Increase the number of main loop cycles elapsed since last status change
                 ser     HTMP                        ;  1
                 sec                                 ;  1
                 adc     RELAP,TMP                   ;  1
                 adc     HRELAP,TMP                  ;  1
-
-                brcc    op6_nof                  	;  1 2 		If overflowed reset to $FFFF
+                brcc    op3b_nof                  	;  1 2 		If overflowed reset to $FFFF
                 mov     RELAP,HTMP                  ;  1
                 mov     HRELAP,HTMP                 ;  1
                 rjmp    PC+4                        ;  2
-op6_nof:     	nop                                 ;    1
+op3b_nof:     	nop                                 ;    1
                 nop                                 ;    1
                 nop                                 ;    1
                 in      TMP,PIND                    ;  1   		Read Port D
@@ -18,19 +17,15 @@ op6_nof:     	nop                                 ;    1
                 mov     HTMP,FLAGS                  ;  1   		Check if the level of the reception input pin has changed
                 andi    HTMP,FRLST                  ;  1
                 eor     HTMP,TMP                    ;  1
-                breq    op6_same                    ;  1   2 	If not jump
-
+                breq    op3b_same                   ;  1   2 	If not jump
                 andi    FLAGS,~FRLST                ;  1   		Otherwise update bit status in flags
                 ori     TMP,FREC                    ;  1   		And signal the event
                 or      FLAGS,TMP                   ;  1
-
-                rjmp    op6_over                    ;  2   		Jump out
-
-op6_same:       nop                                 ;      1
+                rjmp    op3b_over                   ;  2   		Jump out
+op3b_same:      nop                                	;      1
                 nop                                 ;      1
                 nop                                 ;      1
                 nop                                 ;      1
+op3b_over:      nop                          		;  1
 
-op6_over:       WASTE   21                          ; 21
-
-                ;21 clock cycles available at the end
+                ; 1 clock cycles available at the end

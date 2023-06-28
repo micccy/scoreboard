@@ -1,42 +1,40 @@
                 ; 2 clock cycles used - 54 remaining
 
                 tst     DXADD                       ;  1        Check if DX score must be incremented
-                breq    op3_dnadd                  	;  1 2      If not jump over and sync
+                breq    op3a_dnadd                  ;  1 2      If not jump over and sync
                 dec     DXADD                       ;  1        Decrease the increment register
                 ori     FLAGS,FUPD                  ;  1        Set display to update
                 inc     DX_U                        ;  1        Increase DX score units place
                 ldi     TMP,10                      ;  1
                 cp      DX_U,TMP                    ;  1
-                brlo    op3_dnincd                  ;  1   2    If less than ten jump over and sync
+                brlo    op3a_dnincd                 ;  1   2    If less than ten jump over and sync
                 clr     DX_U                        ;  1        Otherwise reset to zero
                 inc     DX_D                        ;  1        Increment DX score tens place
                 ldi     TMP,20                      ;  1
                 cp      DX_D,TMP                    ;  1
                 brlo    PC+2                        ;  1     2  If less than twenty skip over next instruction
                 clr     DX_D                        ;  1        Otherwise reset to zero
-                rjmp    op3_dover                  	;  2        Jump over syncing delays
-op3_dnadd:     	WASTE   6                           ;    5
-op3_dnincd:     WASTE   7                           ;    7 7
-op3_dover:     	; 18 clock fatti
-
+                rjmp    op3a_dover                  ;  2        Jump over syncing delays
+op3a_dnadd:     WASTE   6                           ;    5
+op3a_dnincd:    WASTE   7                           ;    7 7
+op3a_dover:
                 tst     SXADD                       ;  1        Check if SX score must be incremented
-                breq    op3_snadd                  	;  1 2      If not jump over and sync
+                breq    op3a_snadd                  ;  1 2      If not jump over and sync
                 dec     SXADD                       ;  1        Decrease the increment register
                 ori     FLAGS,FUPD                  ;  1        Set display to update
                 inc     SX_U                        ;  1        Increase SX score units place
                 ldi     TMP,10                      ;  1
                 cp      SX_U,TMP                    ;  1
-                brlo    op3_snincd                  ;  1   2    If less than ten jump over and sync
+                brlo    op3a_snincd                 ;  1   2    If less than ten jump over and sync
                 clr     SX_U                        ;  1        Reset to zero
                 inc     SX_D                        ;  1        Increment SX score tens place
                 ldi     TMP,20                      ;  1
                 cp      SX_D,TMP                    ;  1
                 brlo    PC+2                        ;  1     2  If less than twenty skip over next instruction
                 clr     SX_D                        ;  1        Otherwise reset to zero
-                rjmp    op3_sover                  	;  2        Jump over syncing delays
-op3_snadd:     	WASTE   6                          	;    5
-op3_snincd:     WASTE   7                           ;    7 7
-op3_sover:
-                WASTE   22
+                rjmp    op3a_sover                  ;  2        Jump over syncing delays
+op3a_snadd:     WASTE   6                          	;    5
+op3a_snincd:    WASTE   7                           ;    7 7
+op3a_sover:
 
                 ;22 clock cycles available at the end

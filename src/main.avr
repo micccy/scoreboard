@@ -32,9 +32,12 @@ op2:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
 
 op3:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
                 ; 2 clock cycles used - 54 remaining
-				.include "src/op3_addscore.avr"		; 32
-				;22 clock cycles available at the end
+				.include "src/op3a_addscore.avr"	; 32
+				.include "src/op3b_sigreceive.avr"	; 21
+				; 1 clock cycles available at the end
 				;If any number of points must be added to SX/DX score, add one and decrease the number to be added next
+				;Detect level changes on the DCF77 receiver data input pins, update flags
+
 
 op4:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA 4                           ; 12   		Set serial data output bits
@@ -55,369 +58,34 @@ op5:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
 op6:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA 6                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
-				.include "src/op6_receive.avr"		; 21
-                ;21 clock cycles available at the end
-				;Detect level changes on the DCF77 receiver data input pins, update flags
-
+				.include "src/op6_bitreceive.avr"	; 36
+                ; 6 Clock available at the end - 30 partially available
+				;If a level change was detected on the DCF77 receiver data input pin, determine what has been received and set flags
+				;DEBUG - TODO - currently outputs debug info as score
 
 op7:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
 				; 2 clock cycles used - 54 remaining
-
-                ldi     TMP,FREC                    ;  1   		Controllo se c'è stata una ricezione
-                and     TMP,FLAGS                   ;  1
-                breq    dec_nothing                 ;  1 2 		Se non ho ricevuto nulla salto fuori
-
-                andi    FLAGS,~FREC                 ;  1   		Azzero il segnale
-                ldi     TMP,FRLST                   ;  1
-                and     TMP,FLAGS                   ;  1   		Controllo che bit ho ricevuto
-                brne    zero_rec                    ;  1   2 	Se è un uno, significa che il segnale da gestire è uno zero
-                nop                                 ;  1
-
-                ldi     TMP,LOW(UNO2LOW)            ;  1     	Controllo se la durata è troppo bassa
-                ldi     HTMP,HIGH(UNO2LOW)          ;  1
-                cp      HRELAP,HTMP                 ;  1
-                brne    PC+2                        ;  1
-                cp      RELAP,TMP                   ;  1
-                brlo    errore_basso                ;  1     2
-
-                ldi     TMP,LOW(UNOTX0)             ;  1     	Controllo se si tratta di uno zero
-                ldi     HTMP,HIGH(UNOTX0)           ;  1
-                cp      HRELAP,HTMP                 ;  1
-                brne    PC+2                        ;  1
-                cp      RELAP,TMP                   ;  1
-                brlo    dec_tx0                     ;  1            2
-
-                ldi     TMP,LOW(UNOTX1)             ;  1     	Controllo se si tratta di un uno
-                ldi     HTMP,HIGH(UNOTX1)           ;  1
-                cp      HRELAP,HTMP                 ;  1
-                brne    PC+2                        ;  1
-                cp      RELAP,TMP                   ;  1
-                brlo    dec_tx1                     ;  1              2
-
-                rjmp    errore_alto                 ;  2
-
-zero_rec:       ldi     TMP,LOW(ZRO2LOW)            ;      1    Controllo se la durata è troppo bassa
-                ldi     HTMP,HIGH(ZRO2LOW)          ;      1
-                cp      HRELAP,HTMP                 ;      1
-                brne    PC+2                        ;      1
-                cp      RELAP,TMP                   ;      1
-                brlo    errore_basso                ;      1    2
-
-                ldi     TMP,LOW(ZROSEC)             ;      1    Controllo se si tratta di un secondo
-                ldi     HTMP,HIGH(ZROSEC)           ;      1
-                cp      HRELAP,HTMP                 ;      1
-                brne    PC+2                        ;      1
-                cp      RELAP,TMP                   ;      1
-                brlo    dec_txS                     ;      1            2
-
-                ldi     TMP,LOW(ZROMIN)             ;      1    Controllo se si tratta di un minuto
-                ldi     HTMP,HIGH(ZROMIN)           ;      1
-                cp      HRELAP,HTMP                 ;      1
-                brne    PC+2                        ;      1
-                cp      RELAP,TMP                   ;      1
-                brlo    dec_txM                     ;      1      2
-
-                rjmp    errore_alto                 ;      2
-
-errore_basso:   WASTE   13                          ;       13 13 Mi sincronizzo con la parte sotto
-                ;30
-errore_alto:    ldi     YL,LOW(num_of_sec)          ;  1   1 1  1
-                ldi     TMP,$80                     ;  1   1 1  1 Segnalo l'errore
-                st      Y,TMP                       ;  2   2 2  2
-                rjmp    dec_out                     ;  2   2 2  2
-                ;36
-
-dec_nothing:    WASTE   30                          ;   30
-                rjmp    dec_out_1                   ;    2
-
-dec_tx0:        ;23
-                andi    FLAGS,~FRBIT                ;               1
-                nop                                 ;               1
-                nop                                 ;               1
-                nop                                 ;               1
-                nop                                 ;               1
-                rjmp    PC+2                        ;               2
-dec_tx1:        ;29
-                ori     FLAGS,FRBIT                 ;               1
-                ori     FLAGS,FTX                   ;               1 1
-                nop                                 ;               1 1
-                nop                                 ;               1 1
-                nop                                 ;               1 1
-                rjmp    dec_out                     ;               2 2
-                ;36
-
-dec_txS:        ;23
-
-                ldi     YL,LOW(num_of_sec)          ;                   1 Leggo dalla RAM il valore attuale
-                ld      TMP,Y                       ;                   2
-                cpi     TMP,60                      ;                   1 Controllo se è troppo alto
-                brsh    PC+2                        ;                   1 Se è troppo alto non lo aumento più
-                inc     TMP                         ;                   1 Lo aumento di uno
-                st      Y,TMP                       ;                   2 Lo salvo al suo posto
-                rjmp    PC+5                        ;                   2 Salto fuori
-dec_txM:        ;29
-                nop                                 ;             1
-                nop                                 ;             1
-                nop                                 ;             1
-                ori     FLAGS,FMIN                  ;             1
-                nop                                 ;             1     1
-                rjmp    dec_out                     ;             2     2
-                ;36
-
-dec_out:        ;36
-                clr     RELAP                       ;  1   1 1  1 1 1 1 1
-                clr     HRELAP                      ;  1   1 1  1 1 1 1 1
-
-                clr     SX_U
-                clr     SX_D
-                ori     FLAGS,1
-                ldi     YL,LOW(num_of_sec)
-                ld      TMP,Y
-                mov     SXADD,TMP
-
-dec_out_1:
-                WASTE   18                          ; 18181818 1818181818
-
-                ;   18 disponibili
-
-
-
+				WASTE 54							; 54
+				;54 clock cycles availabe
 
 op8:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA 8                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
-
-                ldi     TMP,FMIN                    ;  1
-                and     TMP,FLAGS                   ;  1
-                breq    non_min                     ;  1 2
-
-                andi    FLAGS,~FMIN                 ;  1
-                ldi     YL,LOW(num_of_sec)          ;  1
-                ld      TMP,Y+                      ;  2
-
-                cpi     TMP,58                      ;  1
-                brne    min_err                     ;  1   2
-
-                inc     DXADD                       ;  1
-
-                ld      MIN_U,Y+
-                ld      MIN_D,Y+
-                ld      HOUR_U,Y+
-                ld      HOUR_D,Y+
-                clr     SECOND
-                clr     PERIOD
-                ldi     SEC_H,HIGH(SECLOOP)
-                ldi     SEC_L,LOW(SECLOOP)
-                nop                                 ;  1
-                rjmp    min_ex                      ;  2
-
-min_err:        ;inc     DXADD                       ;      1
-                rjmp    min_ex                      ;      2
-non_min:
-                WASTE   12
-                rjmp    min_out
-
-min_ex:         clr     HTMP                        ;  1    	Pulisco la SRAM
-                ldi     YL,LOW(num_of_sec)          ;  1
-                st      Y+,HTMP                     ;  2
-                st      Y+,HTMP                     ;  2
-                st      Y+,HTMP                     ;  2
-                st      Y+,HTMP                     ;  2
-                st      Y+,HTMP                     ;  2
-                st      Y+,HTMP                     ;  2
-
-min_out:        WASTE   26
-                ;   38 disponibili
-
-
+				.include "src/op8_minsync.avr"		; 39
+                ; 3 clock cycles available - 33 partially available
+				;If a minute mark has been received, check it and if satisfied syncronize current clock
+				;DEBUG - TODO write a proper subroutine to handle this
 
 op9:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
 				; 2 clock cycles used - 54 remaining
-
-
-                ldi     TMP,FTX                     ;  1
-                and     TMP,FLAGS                   ;  1   		Controllo se ho ricevuto qualcosa
-                breq    sec_nul                     ;  1 2 		Se no salto fuori (6)
-                com     TMP                         ;  1
-                and     FLAGS,TMP                   ;  1   		Resetto la flag di ricezione
-                ldi     TMP,FRBIT                   ;  1
-                and     TMP,FLAGS                   ;  1   		Metto in TMP il bit attuale
-                ldi     YL,LOW(num_of_sec)          ;  1
-                ld      HTMP,Y                      ;  2   		Leggo il numero del secondo
-
-                ;00 - sempre 0
-                cpi     HTMP,0                      ;  1
-                breq    sec_00                      ;  1   2 	Se è il primo secondo elaboro di conseguenza (15)
-
-                ;01/15 - ignoro
-                ;16 - cambio ora
-                cpi     HTMP,16                     ;  1
-                brlo    sec_01_15                   ;  1     2   Salto alla routine 1-15 (17)
-                breq    sec_16                      ;  1       2 Salto alla routine 16 (18)
-
-                ;17 - CEST
-                cpi     HTMP,17                     ;  1
-                breq    sec_17                      ;  1         2 Salto alla routine 17 (20)
-
-                ;18 - CET
-                cpi     HTMP,18                     ;  1
-                breq    sec_18                      ;  1           2 Salto alla routine 18 (22)
-
-                ;19 - leap second
-                cpi     HTMP,19                     ;  1
-                breq    sec_19                      ;  1             2 Salto alla routine 19 (24)
-
-                ;20 - sempre 1
-                cpi     HTMP,20                     ;  1
-                breq    sec_20                      ;  1               2 Salto alla routine 20 (26)
-
-                ;21/24 - min_u
-                cpi     HTMP,25                     ;  1
-                brlo    sec_21_24                   ;  1                 2 Salto alla routine 21-24 (28)
-
-                ;25/27 - min_d
-                ;28 - min_parity
-                cpi     HTMP,28                     ;  1
-                brlo    sec_25_27                   ;  1                   2 Salto alla routine 25-27 (30)
-                breq    sec_28                      ;  1                     2 Salto alla routine 28 (31)
-
-                ;29/32 - hour_u
-                cpi     HTMP,33                     ;  1
-                brlo    sec_29_32                   ;  1                       2 Salto alla routine 29-32 (33)
-
-                ;33/34 - hour_d
-                ;35 - hour_parity
-                cpi     HTMP,35                     ;  1
-                brlo    sec_33_34                   ;  1                         2 Salto alla routine 33-34 (35)
-                breq    sec_35                      ;  1                           2 Salto alla routine 35 (36)
-
-                ;59 - se esistente 0 (leap second)
-                cpi     HTMP,59                     ;  1
-                brlo    sec_36_58                   ;  1                             2 Salto alla routine 36-58 (38)
-                breq    sec_59                      ;  1                               2 Salto alla routine 59 (39)
-                rjmp    sec_err                     ;  2                                   Salto alla routine di errore (40)
-
-sec_nul:        ;nul   - no ricezione ( 6)
-                WASTE   48                          ;   48
-                rjmp    opA                         ;    2
-
-sec_00:         ;00    - sempre 0     (15)
-                tst     TMP                         ;      2
-                breq    PC+4                        ;      1-2
-                ldi     TMP,$80                     ;      1-
-                st      Y,TMP                       ;      2-
-                rjmp    PC+5                        ;      2-
-                nop                                 ;       -1
-                nop                                 ;       -1
-                nop                                 ;       -1
-                nop                                 ;       -1
-                WASTE   31                          ;     31
-                rjmp    opA                         ;      2
-
-sec_01_15:      ;01/15 - ignoro       (17)
-                WASTE   37                          ;       37
-                rjmp    opA                         ;        2
-
-sec_16:         ;16    - cambio ora   (18)
-sec_17:         ;17    - CEST         (20)
-sec_18:         ;18    - CET          (22)
-sec_19:         ;19    - leap second  (24)
-sec_20:         ;20    - sempre 1     (26)
-                WASTE   30
-                rjmp    opA
-sec_21_24:      rjmp    sec_21_24_r
-sec_25_27:      rjmp    sec_25_27_r
-sec_28:         rjmp    sec_28_r
-sec_29_32:      rjmp    sec_29_32_r
-sec_33_34:      rjmp    sec_33_34_r
-sec_35:         ;35    - hour_parity  (36)
-sec_36_58:      ;36-58 - ignoro       (38)
-sec_59:         ;59    - 0 se esiste  (39)
-sec_err:        ;err   - errore       (40)
-                WASTE   14
-                rjmp    opA
-
-sec_21_24_r:    ;21/24 - min_u        (28)
-                ldi     YL,LOW(rminu)               ;                    1
-                ld      HTMP,Y                      ;                    2 Leggo dalla memoria l'attuale valore dell'unità dei minuti
-                lsr     HTMP                        ;                    1 Lo shifto a DX
-                lsr     TMP                         ;                    1
-                lsr     TMP                         ;                    1
-                lsr     TMP                         ;                    1 Shifto a DX il bit ricevuto ottenendo $00 oppure $08
-                or      HTMP,TMP                    ;                    1 Elaboro il nuovo valore
-                st      Y,HTMP                      ;                    2 Lo salvo
-                ldi     YL,LOW(rflags)              ;                    1
-                nop                                 ;                    1
-                ld      HTMP,Y                      ;                    2 Leggo il valore delle flags
-                lsl     TMP                         ;                    1 Alzo il valore alla flag di parità (+1)
-                eor     HTMP,TMP                    ;                    1 Lo aggiorno
-                st      Y,HTMP                      ;                    2 Salvo il nuovo valore
-                WASTE   8                           ;                    8
-                rjmp    opA                         ;                    2
-
-sec_25_27_r:    ;25/27 - min_d        (32)
-                ldi     YL,LOW(rmind)               ;                      1
-                ld      HTMP,Y                      ;                      2 Leggo dalla memoria l'attuale valore dell'unità dei minuti
-                lsr     HTMP                        ;                      1 Lo shifto a DX
-                lsr     TMP                         ;                      1
-                lsr     TMP                         ;                      1
-                lsr     TMP                         ;                      1
-                lsr     TMP                         ;                      1 Shifto a DX il bit ricevuto ottenendo $00 oppure $04
-                or      HTMP,TMP                    ;                      1 Elaboro il nuovo valore
-                st      Y,HTMP                      ;                      2 Lo salvo
-                ldi     YL,LOW(rflags)              ;                      1
-                lsl     TMP                         ;                      1 Alzo il valore alla flag di parità (+1)
-                ld      HTMP,Y                      ;                      2 Leggo il valore delle flags
-                lsl     TMP                         ;                      1 Alzo il valore alla flag di parità (+1)
-                eor     HTMP,TMP                    ;                      1 Lo aggiorno
-                st      Y,HTMP                      ;                      2 Salvo il nuovo valore
-                nop                                 ;                      1
-                nop                                 ;                      1
-                nop                                 ;                      1
-                rjmp    opA                         ;                      2
-
-sec_28_r:       ;28    - min_parity (33)
-                rjmp    opA
-sec_29_32_r:      ;29/32 - hour_u       (35)
-                ldi     YL,LOW(rhourru)             ;                      1
-                ld      HTMP,Y                      ;                      2 Leggo dalla memoria l'attuale valore dell'unità dei minuti
-                lsr     HTMP                        ;                      1 Lo shifto a DX
-                lsr     TMP                         ;                      1
-                lsr     TMP                         ;                      1
-                lsr     TMP                         ;                      1 Shifto a DX il bit ricevuto ottenendo $00 oppure $08
-                or      HTMP,TMP                    ;                      1 Elaboro il nuovo valore
-                st      Y,HTMP                      ;                      2 Lo salvo
-                ldi     YL,LOW(rflags)              ;                      1
-                lsl     TMP                         ;                      1 Alzo il valore alla flag di parità (+1)
-                ld      HTMP,Y                      ;                      2 Leggo il valore delle flags
-                lsl     TMP                         ;                      1 Alzo il valore alla flag di parità (+1)
-                eor     HTMP,TMP                    ;                      1 Lo aggiorno
-                st      Y,HTMP                      ;                      2 Salvo il nuovo valore
-                nop                                 ;                      1
-                rjmp    opA                         ;                      2
-
-sec_33_34_r:      ;33/34 - hour_d       (37)
-                ldi     YL,LOW(rhourrd)             ;                      1
-                ld      HTMP,Y                      ;                      2 Leggo dalla memoria l'attuale valore dell'unità dei minuti
-                lsr     HTMP                        ;                      1 Lo shifto a DX
-                tst     TMP                         ;                      1
-                breq    PC+2                        ;                      1
-                ori     HTMP,2                      ;                      1
-                st      Y,HTMP                      ;                      2 Lo salvo
-                ldi     YL,LOW(rflags)              ;                      1
-                lsr     TMP                         ;                      1 Alzo il valore alla flag di parità (-1)
-                ld      HTMP,Y                      ;                      2 Leggo il valore delle flags
-                eor     HTMP,TMP                    ;                      1 Lo aggiorno
-                st      Y,HTMP                      ;                      2 Salvo il nuovo valore
-                nop                                 ;                      1
-                rjmp    opA                         ;                      2
-
-
+				.include "src/op9_decodetime.avr"	; 54
+				;46 clock cycles partially available
+				;Decode time as it is received
+				;DEBUG - TODO write a proper and simpler subroutine to handle this
 
 opA:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA A                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
-
                 WASTE   42
                 ;   42 available
 
@@ -440,7 +108,6 @@ opD:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
 opE:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
                 UP_DATA E                           ; 12   		Set serial data output bits
 				;14 clock cycles used - 42 remaining
-
                 WASTE   42
                 ;   42 available
 
@@ -473,6 +140,8 @@ op0:            sbi     PIND,CLK                    ;  2   		Toggle serial clock
 				;Detect and update real-time second passing
 				;Toggle serial latch output rest position each second
 				;Detect real-time minute passing and set relative flag
+				;TODO - set a on-second flag
+				;TODO - don't write latch flag directly
          		cbi     PORTD,RDY                   ;  2	  	Enable serial shift register chips output
                 rjmp    main_loop                   ;  2      	Loop back
 maindone:
