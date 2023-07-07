@@ -1,0 +1,42 @@
+EESchema-LIBRARY Version 2.4
+#encoding utf-8
+#
+# On Semiconductor D45H8G
+#
+DEF D45H8G Q 0 40 Y Y 1 L N
+F0 "Q" 0 300 50 H V L CNN 
+F1 "D45H8G" 0 400 50 H V L CNN 
+F2 "On_Semiconductor-D45H8G-*" 0 500 50 H I L CNN 
+F3 "http://www.onsemi.com/pub_link/Collateral/D44H-D.PDF" 0 600 50 H I L CNN 
+F4 "Manufacturer URL" 0 700 50 H I L CNN "Component Link 1 Description"
+F5 "http://www.onsemi.com/" 0 800 50 H I L CNN "Component Link 1 URL"
+F6 "Package Specification" 0 900 50 H I L CNN "Component Link 3 Description"
+F7 "http://www.onsemi.com/pub_link/Collateral/221A-09.PDF" 0 1000 50 H I L CNN "Component Link 3 URL"
+F8 "Rev. 12" 0 1100 50 H I L CNN "Datasheet Version"
+F9 "10" 0 1200 50 H I L CNN "IC Continuous A"
+F10 "Through Hole" 0 1300 50 H I L CNN "Mounting Technology"
+F11 "3-Pin Flange Mount, Vertical Straight Lead, Body 9.97 x 4.445 mm, Pitch 2.54 mm" 0 1400 50 H I L CNN "Package Description"
+F12 "Rev. AG, 09/2011" 0 1500 50 H I L CNN "Package Version"
+F13 "Tube" 0 1600 50 H I L CNN "Packing"
+F14 "PNP" 0 1700 50 H I L CNN "Polarity"
+F15 "Trans" 0 1800 50 H I L CNN "category"
+F16 "2559144" 0 1900 50 H I L CNN "ciiva ids"
+F17 "46eb929210ea302d" 0 2000 50 H I L CNN "library id"
+F18 "On Semiconductor" 0 2100 50 H I L CNN "manufacturer"
+F19 "TO-220-3-221A-09" 0 2200 50 H I L CNN "package"
+F20 "1406898701" 0 2300 50 H I L CNN "release date"
+F21 "Yes" 0 2400 50 H I L CNN "rohs"
+F22 "A666DDB4-B285-4D2A-B49F-F9A2B3E7B527" 0 2500 50 H I L CNN "vault revision"
+F23 "yes" 0 2600 50 H I L CNN "imported"
+DRAW
+X B 1 0 0 100 R 40 0 1 1 P 
+X C 2 200 200 100 D 40 0 1 1 P 
+X E 3 200 -200 100 U 40 0 1 1 P 
+P 2 1 1 0 100 90 100 -90 N
+P 2 1 1 0 200 100 100 30 N
+P 2 1 1 0 130 -50 200 -100 N
+P 4 1 1 0 130 -80 160 -40 100 -30 130 -80 N
+ENDDRAW
+ENDDEF
+#
+# End Library

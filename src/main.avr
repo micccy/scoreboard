@@ -1,153 +1,153 @@
-                .device ATmega328p          		;Device definition
+                .device ATmega328p                  ;Device definition
 
-				.include "src/lib/ivt.avr"			;Interrupt vector table
+                .include "src/lib/ivt.avr"          ;Interrupt vector table
 
-				.include "src/lib/def.avr"			;Register and constant definitions
+                .include "src/lib/def.avr"          ;Register and constant definitions
 
-				.include "src/lib/macro.avr"		;Macro definitions
+                .include "src/lib/macro.avr"        ;Macro definitions
 
-				.include "src/lib/sram.avr"			;SRAM map
+                .include "src/lib/sram.avr"         ;SRAM map
 
-				.include "src/lib/reset.avr"		;Bootstrap code
+                .include "src/lib/reset.avr"        ;Bootstrap code
 
                 ;Main program
                 .cseg                               ;Code positioned right after the bootstrap code
                 .org    resetdone
 main_loop:                                          ;Main loop is made of 16 operations that must consume exactly 56 clock cycles each
 
-op1:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
-				; 2 clock cycles used - 54 remaining
-				.include "src/op1_uptimeltc.avr" 	; 53
+op1:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes high - data bits are stored)
+                ; 2 clock cycles used - 54 remaining
+                .include "src/op1_uptimeltc.avr"    ; 53
                 ; 1 clock cycle available at the end - 41 partially available
-				;Set serial latch (also used for the ' : ' colon in the displayed time) as needed
-				;Reset watchdog timer if still enabled (e.g. by fuse bits)
-				;Update displayed time, Serve and first Set indicators if the display update flag is set
+                ;Set serial latch (also used for the ' : ' colon in the displayed time) as needed
+                ;Reset watchdog timer if still enabled (e.g. by fuse bits)
+                ;Update displayed time, Serve and first Set indicators if the display update flag is set
 
-op2:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
-                UP_DATA 2                           ; 12   		Set serial data output bits
-				;14 clock cycles used - 42 remaining
-				.include "src/op2_upscore.avr"		; 38
+op2:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes low)
+                UP_DATA 2                           ; 12        Set serial data output bits
+                ;14 clock cycles used - 42 remaining
+                .include "src/op2_upscore.avr"      ; 38
                 ; 4 clock cycles available at the end - 34 partially available
-				;Update displayed SX/DX scores and second Set indicators if the display update flag is set, then clear it
+                ;Update displayed SX/DX scores and second Set indicators if the display update flag is set, then clear it
 
-op3:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
+op3:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes high - data bits are stored)
                 ; 2 clock cycles used - 54 remaining
-				.include "src/op3a_addscore.avr"	; 32
-				.include "src/op3b_sigreceive.avr"	; 21
-				; 1 clock cycles available at the end
-				;If any number of points must be added to SX/DX score, add one and decrease the number to be added next
-				;Detect level changes on the DCF77 receiver data input pins, update flags
+                .include "src/op3a_addscore.avr"    ; 32
+                .include "src/op3b_sigreceive.avr"  ; 21
+                ; 1 clock cycles available at the end
+                ;If any number of points must be added to SX/DX score, add one and decrease the number to be added next
+                ;Detect level changes on the DCF77 receiver data input pins, update flags
 
 
-op4:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
-                UP_DATA 4                           ; 12   		Set serial data output bits
-				;14 clock cycles used - 42 remaining
-				.include "src/op4_subscore.avr"		; 28
+op4:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes low)
+                UP_DATA 4                           ; 12        Set serial data output bits
+                ;14 clock cycles used - 42 remaining
+                .include "src/op4_subscore.avr"     ; 28
                 ;14 clock cycles available at the end
-				;If any number of points must be subtracted from SX/DX score, subtract one and decrease the number to be subtracted next
+                ;If any number of points must be subtracted from SX/DX score, subtract one and decrease the number to be subtracted next
 
 
 
-op5:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
+op5:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes high - data bits are stored)
                 ; 2 clock cycles used - 54 remaining
-				.include "src/op5_addclock.avr"		; 30
-				;24 clock cycles available at the end
-				;Check if the current minute has to be increased, then increase it and keep a sane 24 hour format clock
+                .include "src/op5_addclock.avr"     ; 30
+                ;24 clock cycles available at the end
+                ;Check if the current minute has to be increased, then increase it and keep a sane 24 hour format clock
 
 
-op6:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
-                UP_DATA 6                           ; 12   		Set serial data output bits
-				;14 clock cycles used - 42 remaining
-				.include "src/op6_bitreceive.avr"	; 36
+op6:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes low)
+                UP_DATA 6                           ; 12        Set serial data output bits
+                ;14 clock cycles used - 42 remaining
+                .include "src/op6_bitreceive.avr"   ; 36
                 ; 6 Clock available at the end - 30 partially available
-				;If a level change was detected on the DCF77 receiver data input pin, determine what has been received and set flags
-				;DEBUG - TODO - currently outputs debug info as score
+                ;If a level change was detected on the DCF77 receiver data input pin, determine what has been received and set flags
+                ;DEBUG - TODO - currently outputs debug info as score
 
-op7:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
-				; 2 clock cycles used - 54 remaining
-				WASTE 54							; 54
-				;54 clock cycles availabe
+op7:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes high - data bits are stored)
+                ; 2 clock cycles used - 54 remaining
+                WASTE 54                            ; 54
+                ;54 clock cycles availabe
 
-op8:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
-                UP_DATA 8                           ; 12   		Set serial data output bits
-				;14 clock cycles used - 42 remaining
-				.include "src/op8_minsync.avr"		; 39
+op8:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes low)
+                UP_DATA 8                           ; 12        Set serial data output bits
+                ;14 clock cycles used - 42 remaining
+                .include "src/op8_minsync.avr"      ; 39
                 ; 3 clock cycles available - 33 partially available
-				;If a minute mark has been received, check it and if satisfied syncronize current clock
-				;DEBUG - TODO write a proper subroutine to handle this
+                ;If a minute mark has been received, check it and if satisfied syncronize current clock
+                ;DEBUG - TODO write a proper subroutine to handle this
 
-op9:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
-				; 2 clock cycles used - 54 remaining
-				.include "src/op9_decodetime.avr"	; 54
-				;46 clock cycles partially available
-				;Decode time as it is received
-				;DEBUG - TODO write a proper and simpler subroutine to handle this
+op9:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes high - data bits are stored)
+                ; 2 clock cycles used - 54 remaining
+                .include "src/op9_decodetime.avr"   ; 54
+                ;46 clock cycles partially available
+                ;Decode time as it is received
+                ;DEBUG - TODO write a proper and simpler subroutine to handle this
 
-opA:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
-                UP_DATA A                           ; 12   		Set serial data output bits
-				;14 clock cycles used - 42 remaining
+opA:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes low)
+                UP_DATA A                           ; 12        Set serial data output bits
+                ;14 clock cycles used - 42 remaining
                 WASTE   42
                 ;   42 available
 
-opB:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
-				; 2 clock cycles used - 54 remaining
+opB:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes high - data bits are stored)
+                ; 2 clock cycles used - 54 remaining
                 WASTE   54
                 ;   54 available
 
-opC:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
-                UP_DATA C                           ; 12   		Set serial data output bits
-				;14 clock cycles used - 42 remaining
+opC:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes low)
+                UP_DATA C                           ; 12        Set serial data output bits
+                ;14 clock cycles used - 42 remaining
                 WASTE   42
                 ;   42 available
 
-opD:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
-				; 2 clock cycles used - 54 remaining
+opD:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes high - data bits are stored)
+                ; 2 clock cycles used - 54 remaining
                 WASTE   54
                 ;   54 available
 
-opE:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
-                UP_DATA E                           ; 12   		Set serial data output bits
-				;14 clock cycles used - 42 remaining
+opE:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes low)
+                UP_DATA E                           ; 12        Set serial data output bits
+                ;14 clock cycles used - 42 remaining
                 WASTE   42
                 ;   42 available
 
-opF:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes high - data bits are stored)
-                cbi     PORTD,LTC                   ;  2   		Clear serial latch output
-                lsl     CNT_MSK                     ;  1      	Shift left current figure selector (used to load the X data - or
-													;			anode selection - register)
-                brne    opF_sync               		;  2 1    	If not zero jump to sync then X/Y data loading
-                ldi     CNT_MSK,1                   ;    1    	Otherwise enable the first bit
-                ldi     XL,LOW(mask)                ;    1    	Set the X pointer to the first figure in SRAM
-                rjmp    opF_load                	;    2    	Then jump to X/Y data loading
-opF_sync:  		nop                                 ;  1      	Sync
+opF:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes high - data bits are stored)
+                cbi     PORTD,LTC                   ;  2        Clear serial latch output
+                lsl     CNT_MSK                     ;  1        Shift left current figure selector (used to load the X data - or
+                                                    ;           anode selection - register)
+                brne    opF_sync                    ;  2 1      If not zero jump to sync then X/Y data loading
+                ldi     CNT_MSK,1                   ;    1      Otherwise enable the first bit
+                ldi     XL,LOW(mask)                ;    1      Set the X pointer to the first figure in SRAM
+                rjmp    opF_load                    ;    2      Then jump to X/Y data loading
+opF_sync:       nop                                 ;  1        Sync
                 nop                                 ;  1
                 nop                                 ;  1
-opF_load:  	 	mov     XDT_MSK,CNT_MSK             ;  1 1		Load the new X value
-                ld      YDT_MSK,X+                  ;  2      	Load the new Y value from the SRAM location pointed by X
-													;			then increment X to point to the next figure
-				;13 clock cycles used - 43 remaining
-                .include "src/opF_bootest.avr"		; 41
+opF_load:       mov     XDT_MSK,CNT_MSK             ;  1 1      Load the new X value
+                ld      YDT_MSK,X+                  ;  2        Load the new Y value from the SRAM location pointed by X
+                                                    ;           then increment X to point to the next figure
+                ;13 clock cycles used - 43 remaining
+                .include "src/opF_bootest.avr"      ; 41
                 ; 2 clock cycles available at the end - 37 partially available
-				;Check if the boot test pattern must be displayed, if yes do it and update status until the end
+                ;Check if the boot test pattern must be displayed, if yes do it and update status until the end
 
 
-op0:            sbi     PIND,CLK                    ;  2   		Toggle serial clock output bit (goes low)
-                sbi     PIND,LTC                    ;  2   		Toggle serial latch output (goes high - serial register copied in output register)
-                UP_DATA 0                           ; 12   		Set serial data output bits
-				;16 clock cycles used before / 4 clock cycles used after - 36 remaining
-				.include "src/op0_seclatch.avr"		; 36
+op0:            sbi     PIND,CLK                    ;  2        Toggle serial clock output bit (goes low)
+                sbi     PIND,LTC                    ;  2        Toggle serial latch output (goes high - serial register copied in output register)
+                UP_DATA 0                           ; 12        Set serial data output bits
+                ;16 clock cycles used before / 4 clock cycles used after - 36 remaining
+                .include "src/op0_seclatch.avr"     ; 36
                 ;   30 clock cycles partially available
-				;Detect and update real-time second passing
-				;Toggle serial latch output rest position each second
-				;Detect real-time minute passing and set relative flag
-				;TODO - set a on-second flag
-				;TODO - don't write latch flag directly
-         		cbi     PORTD,RDY                   ;  2	  	Enable serial shift register chips output
-                rjmp    main_loop                   ;  2      	Loop back
+                ;Detect and update real-time second passing
+                ;Toggle serial latch output rest position each second
+                ;Detect real-time minute passing and set relative flag
+                ;TODO - set a on-second flag
+                ;TODO - don't write latch flag directly
+                cbi     PORTD,RDY                   ;  2        Enable serial shift register chips output
+                rjmp    main_loop                   ;  2        Loop back
 maindone:
 
                 ;Data to be loaded in SRAM at startup
-				.include "src/lib/load.avr"
+                .include "src/lib/load.avr"
 
-				;Flash and EEPROM signatures
-				.include "src/lib/sign.avr"
+                ;Flash and EEPROM signatures
+                .include "src/lib/sign.avr"

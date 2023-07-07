@@ -1,6 +1,6 @@
-				.cseg                               ;Code positioned right after the interrupt vector table
+                .cseg                               ;Code positioned right after the interrupt vector table
                 .org    loaddone
-				.db 	"[ (C) Michele 'Micccy' Giacomone - mictronic5677 scoreboard - %YEAR%-%MONTH%-%DAY% %HOUR%:%MINUTE% ] ",$00	;FLASH Signature
-				.eseg
-				.org	$000
-				.db 	"[ (C) Michele 'Micccy' Giacomone - mictronic5677 scoreboard - %YEAR%-%MONTH%-%DAY% %HOUR%:%MINUTE% ] ",$00	;EEPROM Signature
+                .db     "[ (C) Michele 'Micccy' Giacomone - mictronic5677 scoreboard - %YEAR%-%MONTH%-%DAY% %HOUR%:%MINUTE% ] ",$00 ;FLASH Signature
+                .eseg
+                .org    $000
+                .db     "[ (C) Michele 'Micccy' Giacomone - mictronic5677 scoreboard - %YEAR%-%MONTH%-%DAY% %HOUR%:%MINUTE% ] ",$00 ;EEPROM Signature

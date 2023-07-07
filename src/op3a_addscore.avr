@@ -33,7 +33,7 @@ op3a_dover:
                 brlo    PC+2                        ;  1     2  If less than twenty skip over next instruction
                 clr     SX_D                        ;  1        Otherwise reset to zero
                 rjmp    op3a_sover                  ;  2        Jump over syncing delays
-op3a_snadd:     WASTE   6                          	;    5
+op3a_snadd:     WASTE   6                           ;    5
 op3a_snincd:    WASTE   7                           ;    7 7
 op3a_sover:
 

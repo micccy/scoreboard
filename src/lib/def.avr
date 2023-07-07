@@ -1,20 +1,20 @@
-                .equ	PIND    = $09
-                .equ	DDRD	= $0A
-                .equ	PORTD	= $0B
-                .equ	PORTC	= $08
-                .equ	PORTB	= $05
-				.equ	ACSR	= $30
-				.equ 	MCUSR	= $34
-                .equ	SPL	    = $3D
-                .equ	SPH	    = $3E
+                .equ    PIND    = $09
+                .equ    DDRD    = $0A
+                .equ    PORTD   = $0B
+                .equ    PORTC   = $08
+                .equ    PORTB   = $05
+                .equ    ACSR    = $30
+                .equ    MCUSR   = $34
+                .equ    SPL     = $3D
+                .equ    SPH     = $3E
 
-				.equ 	WDTCSR 	= $60
-				.equ	PRR		= $64
+                .equ    WDTCSR  = $60
+                .equ    PRR     = $64
 
-                .equ	RAMEND	= $08FF
+                .equ    RAMEND  = $08FF
 
                 .equ    SECLOOP =  4464
-				.equ	BOTLOOP = SECLOOP/4
+                .equ    BOTLOOP = SECLOOP/4
 
                 .equ    UNO2LOW =   316
                 .equ    UNOTX0  =   632
@@ -24,20 +24,20 @@
                 .equ    ZROSEC  =  5682
                 .equ    ZROMIN  = 11995
 
-				.equ	WDRF	= 0b00001000
-				.equ	WDCE	= 0b00010000
-				.equ	WDE		= 0b00001000
-				.equ	WDIF	= 0b10000000
+                .equ    WDRF    = 0b00001000
+                .equ    WDCE    = 0b00010000
+                .equ    WDE     = 0b00001000
+                .equ    WDIF    = 0b10000000
 
-				.equ	ACD		= 0b10000000
+                .equ    ACD     = 0b10000000
 
-				.equ	PRADC	= 0b00000001
-				.equ	PRUSART0= 0b00000010
-				.equ	PRSPI	= 0b00000100
-				.equ	PRTIM1	= 0b00001000
-				.equ	PRTIM0	= 0b00100000
-				.equ	PRTIM2	= 0b01000000
-				.equ	PRTWI	= 0b10000000
+                .equ    PRADC   = 0b00000001
+                .equ    PRUSART0= 0b00000010
+                .equ    PRSPI   = 0b00000100
+                .equ    PRTIM1  = 0b00001000
+                .equ    PRTIM0  = 0b00100000
+                .equ    PRTIM2  = 0b01000000
+                .equ    PRTWI   = 0b10000000
 
                 .equ    FUPD    = 0b00000001
                 .equ    FUPMIN  = 0b00000010
@@ -50,7 +50,7 @@
                 .equ    FTX     = 0b10000000
 
                 .equ    HLTC    = 0b00000001
-				.equ	HRST	= 0b00000010
+                .equ    HRST    = 0b00000010
 
                 .equ    TCHG    = 0b00000001
                 .equ    TCEST   = 0b00000010
@@ -92,12 +92,12 @@
                 .def    PERIOD  = r23
                 .def    SEC_L   = r24
                 .def    SEC_H   = r25
-                .def	XL	    = r26
-                .def	XH	    = r27
-                .def	YL	    = r28
-                .def	YH	    = r29
-                .def	DXSUB   = r30               ;  Also the Z-pointer lower byte
-                .def	SXSUB   = r31               ;  Also the Z-pointer higher byte
+                .def    XL      = r26
+                .def    XH      = r27
+                .def    YL      = r28
+                .def    YH      = r29
+                .def    DXSUB   = r30               ;  Also the Z-pointer lower byte
+                .def    SXSUB   = r31               ;  Also the Z-pointer higher byte
 
 
                 ;SETBAT:
@@ -119,7 +119,7 @@
 
                 ;HFLAGS:
                 ;0000-000x latch rest state (used to control clock's ' : ' colon)
-				;0000-00x0 display startup test sequence
+                ;0000-00x0 display startup test sequence
 
                 ;t_flags:
                 ;0000-000x dst change warning

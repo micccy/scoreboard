@@ -1,5 +1,5 @@
                 .cseg                       ;Interrupt Vector Table
-                .org    $0000				;Start of Application Memory
+                .org    $0000               ;Start of Application Memory
                 jmp     ivtdone             ;Reset
                 reti                        ;IRQ0 Handler
                 nop
@@ -51,4 +51,4 @@
                 nop
                 reti                        ;Store Program Memory Ready Handler
                 nop
-ivtdone:									;Address of first free program word
+ivtdone:                                    ;Address of first free program word

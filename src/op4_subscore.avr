@@ -1,4 +1,4 @@
-				;14 clock cycles used - 42 remaining
+                ;14 clock cycles used - 42 remaining
 
                 tst     DXSUB                       ;  1        Check if DX score must be decremented
                 breq    op4_dnsub                   ;  1 2      If not jump over and sync

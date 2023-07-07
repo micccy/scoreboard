@@ -1,50 +1,50 @@
-				;13 clock cycles used - 43 remaining
+                ;13 clock cycles used - 43 remaining
 
-				mov		TMP,HFLAGS					;  1		Check if the boot test sequence has to be displayed
-				andi	TMP,HRST					;  1
-				breq	opF_noboot					;  1 2		If not jump over and waste time/do something else (sync)
-				lds		TMP,boot_iter			    ;  2		Load the number of iterations (word)
-				lds		HTMP,boot_iter+1		    ;  2
-				subi	TMP,1						;  1		Decrease it by one
-				sbci	HTMP,0						;  1
-				sts		boot_iter,TMP			    ;  2		Store it back
-				sts		boot_iter+1,HTMP		    ;  2
-				brpl	opF_nouflow					;  1   2	If still positive jump over and sync
-				ldi		TMP,LOW(BOTLOOP-1)			;  1		Otherwise reload the wait
-				ldi		HTMP,HIGH(BOTLOOP-1)		;  1
-				sts		boot_iter,TMP			    ;  2		Store it back
-				sts		boot_iter+1,HTMP		    ;  2
-				lds		TMP,boot_val			    ;  2		Get current next output value
-				lds		HTMP,boot_cur			    ;  2		Get current output value
-				mov		YDT_MSK,TMP					;  1		Update current output value
-				cpi		TMP,$FF						;  1		Check if current next output value is FF (All segments off)
-				brne	opF_noFF					;  1     2	If not keep going
-				cpi		HTMP,$FF					;  1			Otherwise check if the current value is FF
-				breq	opF_disboot					;  1       2	If yes terminate
-				cpi 	HTMP,$7F					;  1			Otherwise check if the current value is 7F (Second last "frame" displayed)
-				breq	opF_seclast					;  1         2	If yes just keep going
-				clc									;  1			Otherwise this was the first frame, clear carry to set FE as next value
-				rjmp	opF_fframe					;  2
-opF_noFF:		nop									;        1
-				nop									;        1
-				nop									;        1
-				nop									;        1
-opF_seclast:	nop									;        1   1
-				sec									;        1   1	Set carry
-opF_fframe:		rol		TMP							;  1	 1   1	Calculate next next output value (rotate left through carry)
-				sts		boot_val,TMP			    ;  2	 2	 2 	Save it as next value
+                mov     TMP,HFLAGS                  ;  1        Check if the boot test sequence has to be displayed
+                andi    TMP,HRST                    ;  1
+                breq    opF_noboot                  ;  1 2      If not jump over and waste time/do something else (sync)
+                lds     TMP,boot_iter               ;  2        Load the number of iterations (word)
+                lds     HTMP,boot_iter+1            ;  2
+                subi    TMP,1                       ;  1        Decrease it by one
+                sbci    HTMP,0                      ;  1
+                sts     boot_iter,TMP               ;  2        Store it back
+                sts     boot_iter+1,HTMP            ;  2
+                brpl    opF_nouflow                 ;  1   2    If still positive jump over and sync
+                ldi     TMP,LOW(BOTLOOP-1)          ;  1        Otherwise reload the wait
+                ldi     HTMP,HIGH(BOTLOOP-1)        ;  1
+                sts     boot_iter,TMP               ;  2        Store it back
+                sts     boot_iter+1,HTMP            ;  2
+                lds     TMP,boot_val                ;  2        Get current next output value
+                lds     HTMP,boot_cur               ;  2        Get current output value
+                mov     YDT_MSK,TMP                 ;  1        Update current output value
+                cpi     TMP,$FF                     ;  1        Check if current next output value is FF (All segments off)
+                brne    opF_noFF                    ;  1     2  If not keep going
+                cpi     HTMP,$FF                    ;  1            Otherwise check if the current value is FF
+                breq    opF_disboot                 ;  1       2    If yes terminate
+                cpi     HTMP,$7F                    ;  1            Otherwise check if the current value is 7F (Second last "frame" displayed)
+                breq    opF_seclast                 ;  1         2  If yes just keep going
+                clc                                 ;  1            Otherwise this was the first frame, clear carry to set FE as next value
+                rjmp    opF_fframe                  ;  2
+opF_noFF:       nop                                 ;        1
+                nop                                 ;        1
+                nop                                 ;        1
+                nop                                 ;        1
+opF_seclast:    nop                                 ;        1   1
+                sec                                 ;        1   1  Set carry
+opF_fframe:     rol     TMP                         ;  1     1   1  Calculate next next output value (rotate left through carry)
+                sts     boot_val,TMP                ;  2     2   2  Save it as next value
                 sts     boot_cur,YDT_MSK            ;  2     2   2
-				rjmp 	opF_done					;  2     2   2  Jump over
-opF_disboot:	andi	HFLAGS,~HRST				;          1	Finished, clear boot test sequence flag
-				ori		HFLAGS,HLTC					;          1	Set latch off after this
-				WASTE  7							;          7
-				rjmp	opF_done					;          2
-opF_nouflow:	WASTE 21							;     21
-				andi	HFLAGS,~HLTC				;      1		Set latch rest position on the whole time
-				lds		YDT_MSK,boot_cur		    ;      2		Get current next output value
-				rjmp	opF_done					;      2
-opF_noboot:		WASTE 37							;   37
-opF_done:		nop									;  1 1 1 1 1 1
-				nop									;  1 1 1 1 1 1
+                rjmp    opF_done                    ;  2     2   2  Jump over
+opF_disboot:    andi    HFLAGS,~HRST                ;          1    Finished, clear boot test sequence flag
+                ori     HFLAGS,HLTC                 ;          1    Set latch off after this
+                WASTE  7                            ;          7
+                rjmp    opF_done                    ;          2
+opF_nouflow:    WASTE 21                            ;     21
+                andi    HFLAGS,~HLTC                ;      1        Set latch rest position on the whole time
+                lds     YDT_MSK,boot_cur            ;      2        Get current next output value
+                rjmp    opF_done                    ;      2
+opF_noboot:     WASTE 37                            ;   37
+opF_done:       nop                                 ;  1 1 1 1 1 1
+                nop                                 ;  1 1 1 1 1 1
 
                 ; 2 clock cycles available at the end - 37 partially available

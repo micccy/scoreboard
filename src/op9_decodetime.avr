@@ -1,16 +1,16 @@
-				; 2 clock cycles used - 54 remaining
+                ; 2 clock cycles used - 54 remaining
 
                 ldi     TMP,FTX                     ;  1
-                and     TMP,FLAGS                   ;  1   		Check if we received a bit
-                breq    sec_nul_r                   ;  1 2 		If not jump over and do something else/waste time (sync)
+                and     TMP,FLAGS                   ;  1        Check if we received a bit
+                breq    sec_nul_r                   ;  1 2      If not jump over and do something else/waste time (sync)
                 com     TMP                         ;  1
-                and     FLAGS,TMP                   ;  1		Clear reception flag
+                and     FLAGS,TMP                   ;  1        Clear reception flag
                 ldi     TMP,FRBIT                   ;  1
-                and     TMP,FLAGS                   ;  1   		Load received bit in TMP
+                and     TMP,FLAGS                   ;  1        Load received bit in TMP
                 ldi     YL,LOW(num_of_sec)          ;  1
-                ld      HTMP,Y                      ;  2   		Get the receiver second number
+                ld      HTMP,Y                      ;  2        Get the receiver second number
                 cpi     HTMP,0                      ;  1
-                breq    sec_00                      ;  1   2 	Handle first bit (must be a zero)
+                breq    sec_00                      ;  1   2    Handle first bit (must be a zero)
                 cpi     HTMP,20                     ;  1
                 brlo    sec_01_19                   ;  1     2   Handle bits 1-19 (ignore them)
                 breq    sec_20                      ;  1       2 Handle bit 20 (must be a one)
@@ -24,30 +24,30 @@
                 cpi     HTMP,35                     ;  1
                 brlo    sec_33_34r                  ;  1                 2 Handle bits 33-34 (hour tens place)
                 breq    sec_35r                     ;  1                   2 Handle bit 35 (hour parity)
-				cpi		HTMP,59						;  1
-				brlo	sec_36_58					;  1                     2 Handle bits 36-58 (ignore them)
-                rjmp    sec_err                     ;  2		Jump to error handling
+                cpi     HTMP,59                     ;  1
+                brlo    sec_36_58                   ;  1                     2 Handle bits 36-58 (ignore them)
+                rjmp    sec_err                     ;  2        Jump to error handling
 
-sec_nul_r:		rjmp	sec_nul						;    2
+sec_nul_r:      rjmp    sec_nul                     ;    2
 sec_01_19:      ;01/15 - ignoro       (17)
-                WASTE   13                          ;       13	Sync
+                WASTE   13                          ;       13  Sync
 sec_36_58:      ;36-58 - ignoro       (30)
-				WASTE	24							;	  	24				24	Sync
-				rjmp	op9_done					;	  	 2				 2
+                WASTE   24                          ;       24              24  Sync
+                rjmp    op9_done                    ;        2               2
 
-sec_25_27r:		rjmp	sec_25_27					;              2
-sec_28r:		rjmp	sec_28						;                2
-sec_29_32r:		rjmp	sec_29_32					;                  2
-sec_33_34r:		rjmp	sec_33_34					;                    2
-sec_35r:		rjmp	sec_35						;                      2
+sec_25_27r:     rjmp    sec_25_27                   ;              2
+sec_28r:        rjmp    sec_28                      ;                2
+sec_29_32r:     rjmp    sec_29_32                   ;                  2
+sec_33_34r:     rjmp    sec_33_34                   ;                    2
+sec_35r:        rjmp    sec_35                      ;                      2
 
 sec_00:         ;00    - sempre 0     (15)
-                tst     TMP                         ;      2	Check if received a zero
-                breq    PC+4                        ;      1-2	If yes jump over and sync
-                ldi     TMP,$80                     ;      1-	Otherwise signal an arror by setting an illigal seconds value
-                st      Y,TMP                       ;      2-	Store it in sram
+                tst     TMP                         ;      2    Check if received a zero
+                breq    PC+4                        ;      1-2  If yes jump over and sync
+                ldi     TMP,$80                     ;      1-   Otherwise signal an error by setting an illegal seconds value
+                st      Y,TMP                       ;      2-   Store it in sram
                 rjmp    PC+5                        ;      2-
-                nop                                 ;       -1	Sync
+                nop                                 ;       -1  Sync
                 nop                                 ;       -1
                 nop                                 ;       -1
                 nop                                 ;       -1
@@ -55,12 +55,12 @@ sec_00:         ;00    - sempre 0     (15)
                 rjmp    op9_done                    ;      2
 
 sec_20:         ;20    - sempre 1     (26)
-                tst     TMP                         ;          2	Check if received a zero
-                brne    PC+4                        ;          1-2	If not jump over and sync
-                ldi     TMP,$80                     ;          1-	Otherwise signal an arror by setting an illigal seconds value
-                st      Y,TMP                       ;          2-	Store it in sram
+                tst     TMP                         ;          2    Check if received a zero
+                brne    PC+4                        ;          1-2  If not jump over and sync
+                ldi     TMP,$80                     ;          1-   Otherwise signal an error by setting an illegal seconds value
+                st      Y,TMP                       ;          2-   Store it in sram
                 rjmp    PC+5                        ;          2-
-                nop                                 ;           -1	Sync
+                nop                                 ;           -1  Sync
                 nop                                 ;           -1
                 nop                                 ;           -1
                 nop                                 ;           -1
@@ -85,7 +85,7 @@ sec_21_24:      ;21/24 - min_u        (28)
                 WASTE   8                           ;            8
                 rjmp    op9_done                    ;            2
 
-sec_25_27:    	;25/27 - min_d        (32)
+sec_25_27:      ;25/27 - min_d        (32)
                 ldi     YL,LOW(rmind)               ;              1
                 ld      HTMP,Y                      ;              2 Leggo dalla memoria l'attuale valore dell'unità dei minuti
                 lsr     HTMP                        ;              1 Lo shifto a DX
@@ -106,8 +106,8 @@ sec_25_27:    	;25/27 - min_d        (32)
                 nop                                 ;              1
                 rjmp    op9_done                    ;              2
 
-sec_28:       	;28    - min_parity (33)
-                rjmp    op9_done					;                2
+sec_28:         ;28    - min_parity (33)
+                rjmp    op9_done                    ;                2
 sec_29_32:      ;29/32 - hour_u       (35)
                 ldi     YL,LOW(rhourru)             ;                  1
                 ld      HTMP,Y                      ;                  2 Leggo dalla memoria l'attuale valore dell'unità dei minuti
@@ -142,14 +142,14 @@ sec_33_34:      ;33/34 - hour_d       (37)
                 nop                                 ;                    1
                 rjmp    op9_done                    ;                    2
 sec_35:         ;35    - hour_parity  (30)
-				rjmp	op9_done					;                    2
+                rjmp    op9_done                    ;                    2
 
-sec_nul:		WASTE	46							;   46	Sync
-				rjmp	op9_done					;    2	Jump out
+sec_nul:        WASTE   46                          ;   46  Sync
+                rjmp    op9_done                    ;    2  Jump out
 
-sec_err:        ldi     TMP,$80                     ;  1	Signal an error by setting an illegal seconds value
-                st      Y,TMP                       ;  2	Store it in sram
-                WASTE   22                          ; 22	Sync
+sec_err:        ldi     TMP,$80                     ;  1    Signal an error by setting an illegal seconds value
+                st      Y,TMP                       ;  2    Store it in sram
+                WASTE   22                          ; 22    Sync
 op9_done:
 
-				;46 clock cycles partially available
+                ;46 clock cycles partially available

@@ -1,7 +1,7 @@
                 .cseg                               ;Code positioned right after the interrupt vector table
                 .org    ivtdone
 reset:
-				wdr									;Reset watchdog timer if enabled
+                wdr                                 ;Reset watchdog timer if enabled
 
                 ldi     TMP,0b11111111              ;Set PORTB to 1111_1111 (FF)
                 out     PORTB,TMP                   ;(All PORTB pullups enabled)
@@ -11,7 +11,7 @@ reset:
 
                 ldi     TMP,0b11011001              ;Set PORTD to 1101_1001 (D9) (R0 E1 L1 C0 X0 Y1)
                 out     PORTD,TMP                   ;(Lower 5 PORTD pins set to their future output values, bit5 pullup disabled
-			 										;other pullups enabled)
+                                                    ;other pullups enabled)
 
                 ldi     TMP,0b00011111              ;Set DDRD to 0001_1111 (1F)
                 out     DDRD,TMP                    ;(Lower 5 PORTD pins set to output)
@@ -21,23 +21,23 @@ reset:
                 ldi     TMP,LOW(RAMEND)             ;
                 out     SPL,TMP                     ;
 
-				in		TMP,MCUSR					;Clear watchdog reset flag if set
-				andi	TMP,~WDRF					;
-				out 	MCUSR,TMP					;
+                in      TMP,MCUSR                   ;Clear watchdog reset flag if set
+                andi    TMP,~WDRF                   ;
+                out     MCUSR,TMP                   ;
 
-				lds		TMP,WDTCSR					;Enable writes to watchdog control bits
-				ori		TMP,WDCE|WDE				;
-				sts		WDTCSR,TMP					;Now we have 4 clock cycles to change them
-				andi	TMP,WDIF					;Disable watchdog if enabled by software, set prescaler to 2k cycles and
-													;reset interrupt flag if set
-				sts		WDTCSR,TMP					;
+                lds     TMP,WDTCSR                  ;Enable writes to watchdog control bits
+                ori     TMP,WDCE|WDE                ;
+                sts     WDTCSR,TMP                  ;Now we have 4 clock cycles to change them
+                andi    TMP,WDIF                    ;Disable watchdog if enabled by software, set prescaler to 2k cycles and
+                                                    ;reset interrupt flag if set
+                sts     WDTCSR,TMP                  ;
 
-				ldi		TMP,ACD						;Disable analog comparator
-				out		ACSR,TMP					;
+                ldi     TMP,ACD                     ;Disable analog comparator
+                out     ACSR,TMP                    ;
 
-				lds		TMP,PRR						;Disable clock to unused modules
-				ori		TMP,PRTWI|PRTIM2|PRTIM0|PRTIM1|PRSPI|PRUSART0|PRADC	;
-				sts		PRR,TMP						;
+                lds     TMP,PRR                     ;Disable clock to unused modules
+                ori     TMP,PRTWI|PRTIM2|PRTIM0|PRTIM1|PRSPI|PRUSART0|PRADC ;
+                sts     PRR,TMP                     ;
 
                 ldi     XH,HIGH(load_sram)          ;Set a pointer to SRAM destination start
                 ldi     XL,LOW(load_sram)           ;
@@ -85,10 +85,10 @@ sram_setup:     lpm     TMP,Z+                      ;Read a byte from FLASH, pos
                 clr     RELAP                       ;Clear reception counter
                 clr     HRELAP                      ;
 
-                ldi     FLAGS,FUPD		           	;Set clock to update
+                ldi     FLAGS,FUPD                  ;Set clock to update
                 in      TMP,PORTD                   ;
                 andi    TMP,FRLST                   ;
                 or      FLAGS,TMP                   ;Read current reception bit and set flag accordingly
 
-                ldi     HFLAGS,HRST            		;Set latch rest position to on, and the boot test sequence to display
+                ldi     HFLAGS,HRST                 ;Set latch rest position to on, and the boot test sequence to display
 resetdone:
