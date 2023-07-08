@@ -1,0 +1,4 @@
+(fp_lib_table
+  (version 7)
+  (lib (name "eec")(type "KiCad")(uri "/home/michele/Bochs/avr/tabellone/pcb/Trans_On Semiconductor_D45H8G/eec.pretty")(options "")(descr ""))
+)
