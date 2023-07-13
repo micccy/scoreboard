@@ -1,4 +1,4 @@
 out
 pcb/mic5677_displaydriver/mic5677_displaydriver-backups
-*/**.bak
-*/**.lck
+*/**/*.bak
+*/**/*.lck
