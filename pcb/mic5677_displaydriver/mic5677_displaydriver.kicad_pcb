@@ -2177,9 +2177,9 @@
       (net 2 "GND") (pintype "passive") (tstamp bfea83f5-0f22-4301-95af-6d26f3cb34f6))
     (pad "8" thru_hole circle (at 0.85 5.45 90) (size 1.5 1.5) (drill 0.76) (layers "*.Cu" "*.Mask")
       (net 1 "VDC") (pintype "passive") (tstamp 72ff3cb2-d10b-4d5d-984b-2799b3920a41))
-    (pad "9" thru_hole circle (at -3.71 4.69 90) (size 2 2) (drill 1.8) (layers "*.Cu" "*.Mask")
+    (pad "9" thru_hole circle (at -3.71 4.69 90) (size 3 3) (drill 1.8) (layers "*.Cu" "*.Mask")
       (net 2 "GND") (tstamp bdfa4d71-b32e-4865-b1f1-dba6e13a50cf))
-    (pad "9" thru_hole circle (at 12.55 4.69 90) (size 2 2) (drill 1.8) (layers "*.Cu" "*.Mask")
+    (pad "9" thru_hole circle (at 12.55 4.69 90) (size 3 3) (drill 1.8) (layers "*.Cu" "*.Mask")
       (net 2 "GND") (tstamp fe11081e-c59e-4dd1-b89a-2de72f64d06f))
     (model "${KICAD6_3DMODEL_DIR}/Connector_RJ.3dshapes/RJ45_Amphenol_54602-x08_Horizontal.wrl"
       (offset (xyz 0 0 0))
@@ -3424,7 +3424,7 @@
       (stroke (width 0.15) (type solid)) (fill none) (layer "Cmts.User") (tstamp 29ab254d-e870-45a1-81b4-2e4f17b41c1f))
     (fp_circle (center 0 0) (end 4.25 0)
       (stroke (width 0.05) (type solid)) (fill none) (layer "F.CrtYd") (tstamp 037c379e-1a0b-4c93-a33e-32b590fc505b))
-    (pad "" np_thru_hole circle (at 0 0) (size 4 4) (drill 4) (layers "*.Cu" "*.Mask") (tstamp dff4b5b8-4120-4bb4-ae9f-c23e0c81c07a))
+    (pad "" thru_hole circle (at 0 0) (size 7.5 7.5) (drill 4) (layers "*.Cu" "*.Mask") (tstamp dff4b5b8-4120-4bb4-ae9f-c23e0c81c07a))
   )
 
   (footprint "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal" (layer "F.Cu")
@@ -3935,7 +3935,7 @@
       (stroke (width 0.15) (type solid)) (fill none) (layer "Cmts.User") (tstamp 0dbc4c17-a6c4-461d-9eae-a6a4e1511a4a))
     (fp_circle (center 0 0) (end 4.25 0)
       (stroke (width 0.05) (type solid)) (fill none) (layer "F.CrtYd") (tstamp 4e490320-2dca-497d-bbdb-20a76961f733))
-    (pad "" np_thru_hole circle (at 0 0) (size 4 4) (drill 4) (layers "*.Cu" "*.Mask") (tstamp f5ee7bf0-851a-4896-a7e1-23b0341da41b))
+    (pad "" thru_hole circle (at 0 0) (size 7.5 7.5) (drill 4) (layers "*.Cu" "*.Mask") (tstamp f5ee7bf0-851a-4896-a7e1-23b0341da41b))
   )
 
   (footprint "MountingHole:MountingHole_4mm" (layer "F.Cu")
@@ -3965,7 +3965,7 @@
       (stroke (width 0.15) (type solid)) (fill none) (layer "Cmts.User") (tstamp c345a37f-a931-4e91-b7b3-bad76fa69847))
     (fp_circle (center 0 0) (end 4.25 0)
       (stroke (width 0.05) (type solid)) (fill none) (layer "F.CrtYd") (tstamp 50933caa-e421-418a-bdb0-c37093f1e4ae))
-    (pad "" np_thru_hole circle (at 0 0) (size 4 4) (drill 4) (layers "*.Cu" "*.Mask") (tstamp af3c76be-3ce6-4a90-87e8-79dbecf5b14c))
+    (pad "" thru_hole circle (at 0 0) (size 7.5 7.5) (drill 4) (layers "*.Cu" "*.Mask") (tstamp af3c76be-3ce6-4a90-87e8-79dbecf5b14c))
   )
 
   (footprint "Resistor_THT:R_Axial_DIN0204_L3.6mm_D1.6mm_P7.62mm_Horizontal" (layer "F.Cu")
@@ -5512,7 +5512,7 @@
       (stroke (width 0.15) (type solid)) (fill none) (layer "Cmts.User") (tstamp 730fe77c-aabb-4d78-984b-0acd10009850))
     (fp_circle (center 0 0) (end 4.25 0)
       (stroke (width 0.05) (type solid)) (fill none) (layer "F.CrtYd") (tstamp 97b1a0bc-493a-49a5-87a0-d84ca7ce2d15))
-    (pad "" np_thru_hole circle (at 0 0) (size 4 4) (drill 4) (layers "*.Cu" "*.Mask") (tstamp b1e46aca-6296-4e3c-a94b-979958207ea1))
+    (pad "" thru_hole circle (at 0 0) (size 7.5 7.5) (drill 4) (layers "*.Cu" "*.Mask") (tstamp b1e46aca-6296-4e3c-a94b-979958207ea1))
   )
 
   (footprint "Package_TO_SOT_THT:TO-92_Inline" (layer "F.Cu")
