@@ -1,4 +1,4 @@
-21866843721367096
+21868533307823235
 Audio_Module
 Reverb_BTDR-1H
 Digital Reverberation Unit, http://www.belton.co.kr/inc/downfile.php?seq=17&file=pdf (footprint from http://www.uk-electronic.de/PDF/BTDR-1.pdf)
@@ -60948,6 +60948,13 @@ Yellow 5381 Series LED
 0
 2
 2
+Micccy
+RJ45_8P8C_01x09_Horizontal_Final
+8 Pol Shallow Latch Connector, Modjack, RJ45 (https://cdn.amphenol-icc.com/media/wysiwyg/files/drawing/c-bmj-0102.pdf)
+RJ45
+0
+10
+9
 Micccy
 RJ45_8P8C_Horizontal
 8 Pol Shallow Latch Connector, Modjack, RJ45 (https://cdn.amphenol-icc.com/media/wysiwyg/files/drawing/c-bmj-0102.pdf)
